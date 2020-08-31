@@ -1,9 +1,11 @@
 
 from faker import Faker
 import random
+import sys
 
-SEED = 2020
-Faker.seed(2020)
+SEED = random.randint(~sys.maxsize, sys.maxsize)
+Faker.seed(SEED)
+random.seed = SEED
 
 class Maker:
 
