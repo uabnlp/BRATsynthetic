@@ -8,7 +8,7 @@ class DeviceMaker(Maker):
 
         output = self.make_matching_alphanumeric(input)
 
-        print(f'DeviceMaker: {input} -> {output}')
+        # print(f'DeviceMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.make_matching_alphanumeric(input)
 

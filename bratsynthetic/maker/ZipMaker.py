@@ -7,7 +7,7 @@ class ZipMaker(Maker):
 
         output = self.fake.postcode()
 
-        print(f'ZipMaker: {input} -> {output}')
+        # print(f'ZipMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.fake.postcode()
 

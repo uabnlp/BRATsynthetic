@@ -16,7 +16,7 @@ class StreetMaker(Maker):
             output = self.fake.street_name()
 
         output = self.match_case(input, output)
-        print(f"StreetMaker: {input} -> {output}")
+        # print(f"StreetMaker: {input} -> {output}")
         if output == 'UNMATCHED':
             output = self.fake.street_address()
 
