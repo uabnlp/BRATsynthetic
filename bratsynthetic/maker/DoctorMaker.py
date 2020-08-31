@@ -1,12 +1,15 @@
 from .Maker import Maker
 
+import re
 
 class DoctorMaker(Maker):
 
     def make(self, input: str) -> str:
         output = 'UNMATCHED'
 
-        if len(input.split(' ')) == 1:
+        if re.fullmatch(r'\w+,.*', input):    # Assume [LAST], [FIRST]
+            output = f'{self.fake.last_name()}, {self.fake.first_name()}'
+        elif len(input.split(' ')) == 1:
             output = self.fake.last_name()
         else:
             output = self.fake.name()

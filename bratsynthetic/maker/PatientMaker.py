@@ -1,5 +1,6 @@
 from .Maker import Maker
 
+import re
 
 class PatientMaker(Maker):
 
@@ -8,7 +9,9 @@ class PatientMaker(Maker):
 
         words = input.split(' ')
 
-        if len(words) == 1:
+        if re.fullmatch(r'\w+,.*', input):    # Assume [LAST], [FIRST]
+            output = f'{self.fake.last_name()}, {self.fake.first_name()}'
+        elif len(words) == 1:
             output = self.fake.last_name()
         else:
             output = self.fake.name()
