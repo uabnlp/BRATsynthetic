@@ -1,10 +1,13 @@
-
-'I2B2BratConverter.py'
+"""
+Converts I2B2 2014 Deid xml files to Brat files.
+"""
 
 import os
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 from dataclasses import dataclass
+
+import argparse
 
 from bratsynthetic.brattools import BratFile, BratTag
 
@@ -69,25 +72,68 @@ class I2B2BratConverter:
 
         return brat_file
 
+def check_args(args: argparse.Namespace):
+    """
+    Makes sure input directory exists. Creates output directory if it does not exist.
+    """
+
+    if not (os.path.exists(args.input_dir) and os.path.isdir(args.input_dir)):
+        print(f"Input dir does not exist: {args.input_dir}")
+        exit(-1)
+
+    if not (os.path.exists(args.output_dir) and os.path.isdir(args.output_dir)):
+        print(f"Output dir does not exist. Creating {args.output_dir}")
+        os.makedirs(args.output_dir)
+
+
+def parse_args() -> argparse.Namespace:
+    """
+    Parse Program Arguments
+
+    -i / --input_dir - Directory containing I2B2 2014 XML files to convert
+    -o / --output_dir - Directory to output converted brat files to
+    """
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-i', '--input_dir', type=str, metavar='INPUT_DIR',
+                        required=True,
+                        help='Directory containing I2B2 2014 XML files to convert')
+
+    parser.add_argument('-o', '--output_dir', type=str, metavar='OUTPUT_DIR',
+                        required=True,
+                        help='Directory to output converted brat files to')
+
+    args = parser.parse_args()
+
+    return args
+
 
 if __name__ == '__main__':
 
-    dir_to_process = '/Users/tobiasoleary/web/nlp/data/PublicNLPData/i2b2_2014_deIdAndHeartDiseaseRiskFactors/testing-PHI-Gold-fixed'
-    # dir_to_process = '/Users/tobiasoleary/web/nlp/data/PublicNLPData/i2b2_2014_deIdAndHeartDiseaseRiskFactors/training-PHI-Gold-Set1'
-    dir_to_process = '/Users/tobiasoleary/web/nlp/data/PublicNLPData/i2b2_2014_deIdAndHeartDiseaseRiskFactors/training-PHI-Gold-Set2'
-    dir_output = '/Users/tobiasoleary/web/servers/brat/data/i2b2'
+    args = parse_args()
+    check_args(args)
 
-    paths_to_process = [os.path.join(dir_to_process, fname) for fname in os.listdir(dir_to_process) if fname.endswith('.xml')]
+    input_dir = args.input_dir
+    output_dir = args.output_dir
 
+    paths_to_process = [os.path.join(input_dir, fname) for fname in os.listdir(input_dir) if fname.endswith('.xml')]
+
+    print(f"Processing {len(paths_to_process)} files in {input_dir}")
+    count = 0
     for src_xml in paths_to_process:
         ann_fname = os.path.splitext(os.path.basename(src_xml))[0] + '.ann'
-        dest_ann = os.path.join(dir_output, ann_fname)
+        dest_ann = os.path.join(output_dir, ann_fname)
 
         try:
             brat_file = I2B2BratConverter.convert_file(src_xml)
             brat_file.write(dest_ann)
-        except ValueError as err:
-            print(f"Skipping {src_xml}...")
+            count += 1
+        except ValueError as err:   # Skip files causing errors
+            print(f"Skipping {src_xml}")
             print(err)
 
+    print(f"Output {count} files to {output_dir}")
+    if count != len(paths_to_process):
+        print(f"  Skipped {len(paths_to_process) - count} files due to errors")
 
