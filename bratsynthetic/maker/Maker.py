@@ -50,7 +50,7 @@ class Maker:
         """
 
         if template.istitle():
-            return string.capitalize()
+            return string.title()
         elif template.islower():
             return string.lower()
         elif template.isupper():
