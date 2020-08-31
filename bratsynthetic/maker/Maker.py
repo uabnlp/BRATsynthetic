@@ -32,14 +32,27 @@ class Maker:
 
 
     def match_case(self, template: str, string: str) -> str:
+        """
+        Attempts to match the case of the template. Return new string based on template casing
+        Checks for title, lower, and upper case.
+
+        Examples:
+            * match_case('NOV', 'dec') -> 'DEC'
+            * match_case('Hello World!', 'GREAT NEWS!') -> 'Great News!'
+            * match_case('frodo was here', 'Hello') -> 'hello'
+
+        :param template: string to match case to
+        :param string: string to alter case to match input
+        :return: altered string matching the case of the original string
+        """
+
         if template.istitle():
             string.capitalize()
         elif template.islower():
             return string.lower()
         elif template.isupper():
             return string.upper()
-        else:
-            # print(f"Unhandled match_case: {template}")
-            pass
+        # ELSE
+        # print(f"Unhandled match_case: {template}")
 
         return string
