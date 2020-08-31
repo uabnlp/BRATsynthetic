@@ -57,19 +57,19 @@ def parse_args() -> argparse.Namespace:
     """
     Parse Program Arguments
 
-    -i / --input_dir - Directory containing I2B2 2014 XML files to convert
-    -o / --output_dir - Directory to output converted brat files to
+    -i / --input_dir - Input for BRAT files to process
+    -o / --output_dir - Directory to output new synthetic text files to.
     """
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-i', '--input_dir', type=str, metavar='INPUT_DIR',
                         required=True,
-                        help='Directory containing I2B2 2014 XML files to convert')
+                        help='Input for BRAT files to process')
 
     parser.add_argument('-o', '--output_dir', type=str, metavar='OUTPUT_DIR',
                         required=True,
-                        help='Directory to output converted brat files to')
+                        help='Directory to output new synthetic text files to.')
 
     args = parser.parse_args()
 
@@ -105,6 +105,3 @@ if __name__ == '__main__':
 
         with open(output_txt_path, 'w', newline='\n', encoding='utf-8') as out_file:
             out_file.write(replaced_text)
-
-        # Touch the annotation file.
-        Path(output_ann_path).touch(exist_ok=True)
