@@ -232,6 +232,9 @@ _hospitals_short = [
 
 class HospitalMaker(Maker):
 
+    #Assume full name if any of these in the Hospital name
+    full_name_keyword = set([keyword.upper() for keyword in ['Hospital', 'Clinic', 'Center', 'Infirmary', 'System']])
+
     def is_acronym(self, input):
         if len(input) < 5:
             return True
@@ -240,7 +243,9 @@ class HospitalMaker(Maker):
 
     def is_short(self, input):
         words = input.split(' ')
-        if len(words) < 3:
+        full_name_keywords = ['Hospital', 'Clinic', 'Center', 'Infirmary', 'System']
+
+        if len(set([word.upper() for word in words]).intersection(self.full_name_keyword)) > 1 or len(words) < 3:
             return True
         else:
             return False
@@ -255,7 +260,7 @@ class HospitalMaker(Maker):
         else:
             output = random.choice(_hospital_list)
         output = self.match_case(input, output)
-        print(f"HospitalMaker: {input} -> {output}")
+        # print(f"HospitalMaker: {input} -> {output}")
         if output.upper() == 'UNMATCHED':
             output = self.match_case(random.choice(_hospital_list))
 
