@@ -211,7 +211,7 @@ class IDNumMaker(Maker):
         output = self.match_case(input, output)
 
         if self.show_replacements:
-            print(f'IDNumMaker: {input} -> {output}')
+            print(f'    IDNumMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.match_case(random.choice(_nouns))
 

@@ -9,7 +9,7 @@ class FaxMaker(PhoneMaker):
         output = self.make_phone_number()
 
         if self.show_replacements:
-            print(f'FaxMaker: {input} -> {output}')
+            print(f'    FaxMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.make_phone_number()
 

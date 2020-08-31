@@ -9,7 +9,7 @@ class EmailMaker(Maker):
         output = self.fake.ascii_free_email()
 
         if self.show_replacements:
-            print(f'EmailMaker: {input} -> {output}')
+            print(f'    EmailMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.fake.ascii_free_email()
 

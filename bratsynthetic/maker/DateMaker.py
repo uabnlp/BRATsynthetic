@@ -441,7 +441,7 @@ class DateMaker(Maker):
             output = self.match_case(input, self.fake_season())
 
         if self.show_replacements:
-            print(f'DateMaker: {input} -> {output}')
+            print(f'    DateMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.fake.date()
         return output

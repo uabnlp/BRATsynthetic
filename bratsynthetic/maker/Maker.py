@@ -56,6 +56,6 @@ class Maker:
         elif template.isupper():
             return string.upper()
         # ELSE
-        print(f"Unhandled match_case: {template}")
+        print(f"    Unhandled match_case: {template}")
 
         return string

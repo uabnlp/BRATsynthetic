@@ -13,7 +13,7 @@ class StateMaker(Maker):
 
         output = self.match_case(input, output)
         if self.show_replacements:
-            print(f'StateMaker: {input} -> {output}')
+            print(f'    StateMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.fake.state()
 

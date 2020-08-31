@@ -135,7 +135,7 @@ class BratSynthetic:
             if tag.tag_type.upper().startswith(key):
                 return value.make(tag.text)
         # ELSE
-        print(f'No Maker for tag type {tag.tag_type}. Ignoring.')
+        print(f'    No Maker for tag type {tag.tag_type}. Ignoring.')
         return tag.text
 
 

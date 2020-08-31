@@ -490,7 +490,7 @@ class PhoneMaker(Maker):
 
 
         if self.show_replacements:
-            print(f'PhoneMaker: {input} -> {output}')
+            print(f'    PhoneMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.make_matching_alphanumeric(input)
 

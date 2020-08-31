@@ -30,7 +30,7 @@ class TimeMaker(Maker):
         output = self.match_case(input, output)
 
         if self.show_replacements:
-            print(f'TimeMaker: {input} -> {output}')
+            print(f'    TimeMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.fake.time('%H%M')
 

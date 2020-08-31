@@ -18,7 +18,7 @@ class UndeterminedMaker(Maker):
         output = self.match_case(input, output)
 
         if self.show_replacements:
-            print(f'UndeterminedMaker: {input} -> {output}')
+            print(f'    UndeterminedMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.make_matching_alphanumeric(input)
 
