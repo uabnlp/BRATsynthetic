@@ -34,3 +34,12 @@ StateMaker: Maryland -> Ohio
 StreetMaker: 976 Clinton Street -> 4631 Alicia Mount
 ```
 
+## Usage:
+
+`bratsynthetic -i INPUT_DIR -o OUTPUT_DIR`
+
+* `INPUT_DIR` - directory with BRAT files annotated with personal information tags.
+* `OUTPUT_DIR` - directory to output text files with synthetic personal information
+
+
+
