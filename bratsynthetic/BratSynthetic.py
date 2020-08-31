@@ -14,43 +14,56 @@ class BratSynthetic:
 
     def __init__(self, simple_replacement: bool = True):
         self.simple_replacement = simple_replacement
-        self.date_make = DateMaker()
-        self.street_make = StreetMaker()
-        self.hospital_make = HospitalMaker()
-        self.zip_make = ZipMaker()
-        self.patient_make = PatientMaker()
-        self.doctor_make = DoctorMaker()
-        self.state_make = StateMaker()
-        self.age_make = AgeMaker()
-        self.phone_make = PhoneMaker()
-        self.city_make = CityMaker()
-        self.username_make = UsernameMaker()
-        self.profession_maker = ProfessionMaker()
-        self.organization_maker = OrganizationMaker()
-        self.time_maker = TimeMaker()
-        self.country_maker = CountryMaker()
-        self.location_other_maker = LocationOtherMaker()
-        self.medical_record_maker = MedicalRecordMaker()
-        self.idnum_maker = IDNumMaker()
-        self.undetermined_maker = UndeterminedMaker()
-        self.bioid_maker = BioIDMaker()
-        self.device_maker = DeviceMaker()
-        self.email_maker = EmailMaker()
-        self.fax_maker = FaxMaker()
-        self.healthplan_maker = HealthPlanMaker()
-        self.url_maker = URLMaker()
 
+        self.tag_to_maker = None
+        if not self.simple_replacement:
+            self.tag_to_maker = {
+                'AGE': AgeMaker(),
+                'BIOID': BioIDMaker(),
+                'CITY': CityMaker(),
+                'COUNTRY': CountryMaker(),
+                'DATE': DateMaker(),
+                'DEVICE': DeviceMaker(),
+                'DOCTOR': DoctorMaker(),
+                'EMAIL': EmailMaker(),
+                'FAX': FaxMaker(),
+                'HEALTHPLAN': HealthPlanMaker(),
+                'HOSPITAL': HospitalMaker(),
+                'IDNUM': IDNumMaker(),
+                'LOCATION-OTHER': LocationOtherMaker(),
+                'MEDICALRECORD': MedicalRecordMaker(),
+                'ORGANIZATION': OrganizationMaker(),
+                'PATIENT': PatientMaker(),
+                'PHONE': PhoneMaker(),
+                'PROFESSION': ProfessionMaker(),
+                'STATE': StateMaker(),
+                'STREET': StreetMaker(),
+                'TIME': TimeMaker(),
+                'UNDETERMINED': UndeterminedMaker(),
+                'URL': URLMaker(),
+                'USERNAME': UsernameMaker(),
+                'ZIP': ZipMaker(),
+            }
 
     def syntheticize(self, brat_txt_path: str) -> str:
-
         brat_file = BratFile.load_from_file(brat_txt_path)
 
         # Filter to simplest annotation tag
         tags: List[BratTag] = [ann for ann in brat_file.annotations if type(ann) == BratTag]
 
-        # Find overlapping tags, and only use the preferred tag.
+        # Find overlapping tags, and only use the longest tag in each group.
         overlapping_tag_groups: List[List[BratTag]] = self.find_overlapping_tags(tags)
         tags_to_remove: List[BratTag] = []
+
+        for tag_group in overlapping_tag_groups:
+            max_len_tag = tag_group[0]
+            for index, tag in enumerate(tag_group):
+                if (tag.end - tag.start) > (max_len_tag.end - max_len_tag.start):
+                    max_len_tag = tag
+
+            for tag in tag_group:
+                if tag != max_len_tag:
+                    tags_to_remove.append(tag)
 
         for index, tag_to_remove in enumerate(tags_to_remove):
             tags.remove(tag_to_remove)
@@ -74,7 +87,7 @@ class BratSynthetic:
 
 
     def _do_spans_overlap(self, a: Tuple[int, int], b: Tuple[int, int]) -> bool:
-        if a[0] == a[1] or b[0] == b[1]: #if either empty
+        if a[0] == a[1] or b[0] == b[1]:    # if either empty
             return False
         else:
             return ((a[0] <= b[1] and a[1] >= b[0]) or
@@ -117,60 +130,13 @@ class BratSynthetic:
             return self.create_fancy_replacement_text(tag)
 
     def create_fancy_replacement_text(self, tag: BratTag) -> str:
-        if tag.tag_type.startswith('DATE'):
-            return self.date_make.make(tag.text)
-        elif tag.tag_type.startswith('HOSPITAL'):
-            return self.hospital_make.make(tag.text)
-        elif tag.tag_type.startswith('STREET'):
-            return self.street_make.make(tag.text)
-        elif tag.tag_type.startswith('ZIP'):
-            return self.zip_make.make(tag.text)
-        elif tag.tag_type.startswith('PATIENT'):
-            return self.patient_make.make(tag.text)
-        elif tag.tag_type.startswith('DOCTOR'):
-            return self.doctor_make.make(tag.text)
-        elif tag.tag_type.startswith('STATE'):
-            return self.state_make.make(tag.text)
-        elif tag.tag_type.startswith('AGE'):
-            return self.age_make.make(tag.text)
-        elif tag.tag_type.startswith('PHONE'):
-            return self.phone_make.make(tag.text)
-        elif tag.tag_type.startswith('CITY'):
-            return self.city_make.make(tag.text)
-        elif tag.tag_type.startswith('USERNAME'):
-            return self.username_make.make(tag.text)
-        elif tag.tag_type.startswith('PROFESSION'):
-            return self.profession_maker.make(tag.text)
-        elif tag.tag_type.startswith('ORGANIZATION'):
-            return self.organization_maker.make(tag.text)
-        elif tag.tag_type.startswith('TIME'):
-            return self.time_maker.make(tag.text)
-        elif tag.tag_type.startswith('COUNTRY'):
-            return self.country_maker.make(tag.text)
-        elif tag.tag_type.startswith('LOCATION-OTHER'):
-            return self.location_other_maker.make(tag.text)
-        elif tag.tag_type.startswith('MEDICALRECORD'):
-            return self.medical_record_maker.make(tag.text)
-        elif tag.tag_type.startswith('IDNUM'):
-            return self.idnum_maker.make(tag.text)
-        elif tag.tag_type.startswith('UNDETERMINED'):
-            return self.undetermined_maker.make(tag.text)
-        elif tag.tag_type.startswith('BIOID'):
-            return self.bioid_maker.make(tag.text)
-        elif tag.tag_type.startswith('DEVICE'):
-            return self.device_maker.make(tag.text)
-        elif tag.tag_type.startswith('EMAIL'):
-            return self.email_maker.make(tag.text)
-        elif tag.tag_type.startswith('FAX'):
-            return self.fax_maker.make(tag.text)
-        elif tag.tag_type.startswith('HEALTHPLAN'):
-            return self.healthplan_maker.make(tag.text)
-        elif tag.tag_type.startswith('URL'):
-            return self.url_maker.make(tag.text)
-        else:
-            print(f'Unhandled tag type for replacement text: {tag.tag_type}')
-            exit()
-            return f'<<{tag.tag_type}>>'
+
+        for key, value in self.tag_to_maker.items():
+            if tag.tag_type.upper().startswith(key):
+                return value.make(tag.text)
+        # ELSE
+        print(f'No Maker for tag type {tag.tag_type}. Ignoring.')
+        return tag.text
 
 
 
