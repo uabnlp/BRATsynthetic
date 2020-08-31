@@ -12,7 +12,8 @@ class StateMaker(Maker):
             output = self.fake.state()
 
         output = self.match_case(input, output)
-        # print(f'StateMaker: {input} -> {output}')
+        if self.show_replacements:
+            print(f'StateMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.fake.state()
 

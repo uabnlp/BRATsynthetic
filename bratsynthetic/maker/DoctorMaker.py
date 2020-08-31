@@ -12,7 +12,8 @@ class DoctorMaker(Maker):
             output = self.fake.name()
 
         output = self.match_case(input, output)
-        # print(f'DoctorMaker: {input} -> {output}')
+        if self.show_replacements:
+            print(f'DoctorMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.fake.name()
 

@@ -14,7 +14,8 @@ class LocationOtherMaker(Maker):
 
         output = self.match_case(input, output)
 
-        # print(f'LocationOtherMaker: {input} -> {output}')
+        if self.show_replacements:
+            print(f'LocationOtherMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.match_case(random.choice(_locations))
 

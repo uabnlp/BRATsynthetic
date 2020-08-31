@@ -11,6 +11,7 @@ class Maker:
 
     def __init__(self):
         self.fake = Faker()
+        self.show_replacements = True
 
     def make_matching_alphanumeric(self, template: str) -> str:
         """
@@ -49,12 +50,12 @@ class Maker:
         """
 
         if template.istitle():
-            string.capitalize()
+            return string.capitalize()
         elif template.islower():
             return string.lower()
         elif template.isupper():
             return string.upper()
         # ELSE
-        # print(f"Unhandled match_case: {template}")
+        print(f"Unhandled match_case: {template}")
 
         return string

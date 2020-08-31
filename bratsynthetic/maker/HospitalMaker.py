@@ -260,7 +260,8 @@ class HospitalMaker(Maker):
         else:
             output = random.choice(_hospital_list)
         output = self.match_case(input, output)
-        # print(f"HospitalMaker: {input} -> {output}")
+        if self.show_replacements:
+            print(f"HospitalMaker: {input} -> {output}")
         if output.upper() == 'UNMATCHED':
             output = self.match_case(random.choice(_hospital_list))
 

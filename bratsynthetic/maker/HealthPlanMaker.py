@@ -11,7 +11,8 @@ class HealthPlanMaker(Maker):
 
         output = random.choice(self._insurance)
 
-        # print(f'HealthPlanMaker: {input} -> {output}')
+        if self.show_replacements:
+            print(f'HealthPlanMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = random.choice(self._insurance)
 

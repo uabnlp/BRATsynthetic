@@ -13,7 +13,8 @@ class CountryMaker(Maker):
 
         output = self.match_case(input, output)
 
-        # print(f'CountryMaker: {input} -> {output}')
+        if self.show_replacements:
+            print(f'CountryMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.match_case(input, self.fake.country())
 

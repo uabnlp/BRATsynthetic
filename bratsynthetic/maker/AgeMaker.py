@@ -36,7 +36,8 @@ class AgeMaker(Maker):
             break
 
         output = self.match_case(input, output)
-        # print(f'AgeMaker: {input} -> {output}')
+        if self.show_replacements:
+            print(f'AgeMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = str(random.randint(18, 79))
 

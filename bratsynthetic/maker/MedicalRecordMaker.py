@@ -7,7 +7,8 @@ class MedicalRecordMaker(Maker):
 
         output = self.make_matching_alphanumeric(input)
 
-        # print(f'MedicalRecordMaker: {input} -> {output}')
+        if self.show_replacements:
+            print(f'MedicalRecordMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.make_matching_alphanumeric(input)
 

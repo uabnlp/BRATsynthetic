@@ -529,7 +529,8 @@ class ProfessionMaker(Maker):
 
         output = self.match_case(input, output)
 
-        # print(f'ProfessionMaker: {input} -> {output}')
+        if self.show_replacements:
+            print(f'ProfessionMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.match_case(random.choice(_jobs))
 

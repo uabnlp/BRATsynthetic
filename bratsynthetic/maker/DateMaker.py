@@ -440,7 +440,8 @@ class DateMaker(Maker):
         elif re.fullmatch('|'.join(self.seasons), input, re.IGNORECASE):
             output = self.match_case(input, self.fake_season())
 
-        # print(f'DateMaker: {input} -> {output}')
+        if self.show_replacements:
+            print(f'DateMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.fake.date()
         return output
