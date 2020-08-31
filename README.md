@@ -8,5 +8,29 @@ This tool takes annotated text from Brat (https://brat.nlplab.org) and replaces 
 
 ## Examples of Replacements
 
-
+```
+CityMaker: Bristow -> East Michael
+DateMaker: 11/34 -> 01/01
+DateMaker: 2083-08-05 -> 1992-07-06
+DateMaker: 2090 -> 1979
+DateMaker: Jul 27, 2094 -> Aug 23, 1988
+DateMaker: March -> December
+DateMaker: November 2067 -> October 1998
+DoctorMaker: Samantha G Noland -> Brittany Barker
+HospitalMaker: BMH -> HCH
+HospitalMaker: Janesville -> Dekalb
+HospitalMaker: Senior Care Clinic -> Madison Hospital
+HospitalMaker: TRUMBULL MEMORIAL HOSPITAL -> EVERGREEN MEDICAL CENTER
+LocationOtherMaker: long island -> grocery store
+MedicalRecordMaker: 258-16-49-2 -> 212-04-01-2
+MedicalRecordMaker: 3246:F13427 -> 1586:N11853
+OrganizationMaker: THX industries -> Smith-Salas
+PatientMaker: DALEY,WADE -> JACKSON, JENNIFER
+PatientMaker: Neill -> Guerrero
+ProfessionMaker: manager -> advertising copywriter
+ProfessionMaker: Quarry Worker -> Technical Sales Engineer
+StateMaker: FL -> NY
+StateMaker: Maryland -> Ohio
+StreetMaker: 976 Clinton Street -> 4631 Alicia Mount
+```
 
