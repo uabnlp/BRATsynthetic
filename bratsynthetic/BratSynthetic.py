@@ -125,7 +125,7 @@ class BratSynthetic:
 
     def create_replacement_text_for_tag(self, tag:BratTag) -> str:
         if self.simple_replacement:
-            return f'<<{tag.tag_type}>>'
+            return f'[**PHI-{tag.tag_type}**]'.upper()
         else:
             return self.create_fancy_replacement_text(tag)
 
