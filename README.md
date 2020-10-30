@@ -41,5 +41,33 @@ StreetMaker: 976 Clinton Street -> 4631 Alicia Mount
 * `INPUT_DIR` - directory with BRAT files annotated with personal information tags.
 * `OUTPUT_DIR` - directory to output text files with synthetic personal information
 
+## Tags Handled
 
+```
+AGE
+BIOID
+CITY
+COUNTRY
+DATE
+DEVICE
+DOCTOR
+EMAIL
+FAX
+HEALTHPLAN
+HOSPITAL
+IDNUM
+LOCATION-OTHER
+MEDICALRECORD
+ORGANIZATION
+PATIENT
+PHONE
+PROFESSION
+STATE
+STREET
+TIME
+UNDETERMINED
+URL
+USERNAME
+ZIP
+```
 
