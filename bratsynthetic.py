@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     print(f"Processing {len(files)} files...")
 
-    brat_synthetic = BratSynthetic(simple_replacement=False)
+    brat_synthetic = BratSynthetic(simple_replacement=True)
     for index in range(len(files)):
         txt_path = files[index]
         ann_path = os.path.splitext(txt_path)[0] + '.ann'
@@ -105,3 +105,5 @@ if __name__ == '__main__':
 
         with open(output_txt_path, 'w', newline='\n', encoding='utf-8') as out_file:
             out_file.write(replaced_text)
+
+    print(f"Finished Process. Output Dir: {output_dir}")
