@@ -10,7 +10,7 @@ class TimeMaker(Maker):
 
         add_colon = ':' in input
         add_meridian = (re.search(r'[ap]\.?m', input, re.IGNORECASE)) != None
-        with_periods = (re.search(r'[ap]\.'), input, re.IGNORECASE) != None
+        with_periods = (re.search(r'[ap]\.', input, re.IGNORECASE)) != None
 
         if add_colon and add_meridian:
             if with_periods:
