@@ -124,8 +124,8 @@ class BratTag(BratAnnotation):
             return False
 
         return self.tag_type == other.tag_type \
-               and self.start() == other.start() \
-               and self.end() == other.end() \
+               and self.start == other.start \
+               and self.end == other.end \
                and self.text == other.text
 
 class BratEvent(BratAnnotation):
