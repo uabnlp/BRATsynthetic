@@ -45,7 +45,17 @@ class BratSynthetic:
                 'ZIP': ZipMaker(),
             }
 
-    def syntheticize(self, brat_txt_path: str) -> str:
+            # Add PHI- prefix for these tags.
+            updated_tag_to_maker = {}
+            for key, value in self.tag_to_maker.items():
+                updated_tag_to_maker[key] = value
+                updated_tag_to_maker[f'PHI-{key}'] = value
+            self.tag_to_maker = updated_tag_to_maker
+
+    def syntheticize(self, brat_txt_path: str) -> Tuple[str, str]:
+        """
+        Returns syntheticize text and text for annotation file.
+        """
         brat_file = BratFile.load_from_file(brat_txt_path)
 
         # Filter to simplest annotation tag
@@ -74,16 +84,30 @@ class BratSynthetic:
             replacement_text = self.create_replacement_text_for_tag(tag)
             replacements.append((tag, replacement_text))
 
-        #Sorted replacement from highest ending spans to smallest.
-        replacements.sort(key=lambda x: x[0].spans[-1], reverse=True) #First element of tuple is BratTag
+        #Sorted replacement from first tag in text to last tag in text
+        replacements.sort(key=lambda x: x[0].spans[-1]) #First element of tuple is BratTag
 
+        delta_span = 0
+        new_brat_tags: List[BratTag] = []
         for replacement in replacements:
             replacement_tag = replacement[0]
+            current_text = replacement_tag.text
             replacement_text = replacement[1]
-            for span in replacement_tag.spans:
-                new_text = replacement_text.join([new_text[:span[0]], new_text[span[1]:]])
 
-        return new_text
+            start_span_index = replacement_tag.spans[0][0] + delta_span
+            stop_span_index = replacement_tag.spans[-1][-1] + delta_span
+            new_text = replacement_text.join([new_text[:start_span_index], new_text[stop_span_index:]])
+            new_span = (start_span_index, start_span_index + len(replacement_text))
+
+            new_brat_tags.append(BratTag(replacement_tag.identifier, replacement_tag.tag_type, [new_span], replacement_text))
+
+            delta_span += (len(replacement_text) - len(current_text))
+
+        new_brat_tags.reverse()
+
+        new_brat_file = BratFile(new_text, new_brat_tags)
+
+        return new_brat_file.text, new_brat_file.to_brat_ann()
 
 
     def _do_spans_overlap(self, a: Tuple[int, int], b: Tuple[int, int]) -> bool:
@@ -125,7 +149,10 @@ class BratSynthetic:
 
     def create_replacement_text_for_tag(self, tag:BratTag) -> str:
         if self.simple_replacement:
-            return f'[**PHI-{tag.tag_type}**]'.upper()
+            if tag.tag_type in self.tag_to_maker.keys():
+                return f'[**{tag.tag_type}**]'
+            else:
+                return tag.text
         else:
             return self.create_fancy_replacement_text(tag)
 

@@ -81,14 +81,17 @@ if __name__ == '__main__':
     args = parse_args()
     check_args(args)
 
-    input_dir = args.input_dir
-    output_dir = args.output_dir
+    input_dir = os.path.expandvars(os.path.expanduser(args.input_dir))
+    output_dir = os.path.expandvars(os.path.expanduser(args.output_dir))
+
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
 
     files = [os.path.join(input_dir, file) for file in os.listdir(input_dir) if file.endswith('.txt')]
 
     print(f"Processing {len(files)} files...")
 
-    brat_synthetic = BratSynthetic(simple_replacement=True)
+    brat_synthetic = BratSynthetic(simple_replacement=False)
     for index in range(len(files)):
         txt_path = files[index]
         ann_path = os.path.splitext(txt_path)[0] + '.ann'
@@ -98,12 +101,17 @@ if __name__ == '__main__':
         else:
             print(f"  [{index+1}]: No ANN file skipping {os.path.basename(txt_path)}.")
 
-        replaced_text = brat_synthetic.syntheticize(txt_path)
+        replaced_text, replaced_ann_text = brat_synthetic.syntheticize(txt_path)
 
         output_txt_path = os.path.join(output_dir, os.path.basename(txt_path))
         output_ann_path = os.path.splitext(output_txt_path)[0] + '.ann'
 
         with open(output_txt_path, 'w', newline='\n', encoding='utf-8') as out_file:
             out_file.write(replaced_text)
+
+        with open(output_ann_path, 'w', newline='\n', encoding='utf-8') as out_ann_file:
+            out_ann_file.write(replaced_ann_text)
+
+
 
     print(f"Finished Process. Output Dir: {output_dir}")
