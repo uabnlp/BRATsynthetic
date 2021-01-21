@@ -71,6 +71,9 @@ def parse_args() -> argparse.Namespace:
                         required=True,
                         help='Directory to output new synthetic text files to.')
 
+    parser.add_argument('-s', '--simple_replacement', default=False, action='store_true',
+                        help='If this option is present will do a simple of replacement of PHI. PHI text will be replaced with [**{PHI-TAGNAME}**].')
+
     args = parser.parse_args()
 
     return args
@@ -83,6 +86,7 @@ if __name__ == '__main__':
 
     input_dir = os.path.expandvars(os.path.expanduser(args.input_dir))
     output_dir = os.path.expandvars(os.path.expanduser(args.output_dir))
+    simple_replacement = args.simple_replacement
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
@@ -91,7 +95,7 @@ if __name__ == '__main__':
 
     print(f"Processing {len(files)} files...")
 
-    brat_synthetic = BratSynthetic(simple_replacement=False)
+    brat_synthetic = BratSynthetic(simple_replacement=simple_replacement)
     for index in range(len(files)):
         txt_path = files[index]
         ann_path = os.path.splitext(txt_path)[0] + '.ann'
