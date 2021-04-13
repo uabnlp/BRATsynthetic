@@ -74,6 +74,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('-s', '--simple_replacement', default=False, action='store_true',
                         help='If this option is present will do a simple of replacement of PHI. PHI text will be replaced with [**{PHI-TAGNAME}**].')
 
+    parser.add_argument('-r', '--recursive', default=False, action='store_true',
+                        help='If this option is present will recursively process all directories')
+
     args = parser.parse_args()
 
     return args
