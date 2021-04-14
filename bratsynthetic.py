@@ -75,12 +75,44 @@ def parse_args() -> argparse.Namespace:
                         help='If this option is present will do a simple of replacement of PHI. PHI text will be replaced with [**{PHI-TAGNAME}**].')
 
     parser.add_argument('-r', '--recursive', default=False, action='store_true',
-                        help='If this option is present will recursively process all directories')
+                        help='If this option is set, all directories will be processed recursively')
 
     args = parser.parse_args()
 
     return args
 
+
+def makeSyntheticText(bratsyn, input_dir, output_dir,recurse):
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    files = [os.path.join(input_dir, file) for file in os.listdir(input_dir) if file.endswith('.txt')]
+    print(f"Processing {len(files)} files...")
+
+    for index in range(len(files)):
+        txt_path = files[index]
+        ann_path = os.path.splitext(txt_path)[0] + '.ann'
+
+        if os.path.exists(ann_path):
+            print(f"  [{index + 1}]: {os.path.basename(txt_path)}")
+        else:
+            print(f"  [{index + 1}]: No ANN file skipping {os.path.basename(txt_path)}.")
+
+        replaced_text, replaced_ann_text = bratsyn.syntheticize(txt_path)
+
+        output_txt_path = os.path.join(output_dir, os.path.basename(txt_path))
+        output_ann_path = os.path.splitext(output_txt_path)[0] + '.ann'
+
+        with open(output_txt_path, 'w', newline='\n', encoding='utf-8') as out_file:
+            out_file.write(replaced_text)
+
+        with open(output_ann_path, 'w', newline='\n', encoding='utf-8') as out_ann_file:
+            out_ann_file.write(replaced_ann_text)
+    print(f"Finished Process. Output Dir: {output_dir}")
+    
+    if(recurse):
+        for _,child_dirs,_ in os.walk(input_dir):
+            for sdir in child_dirs:
+                makeSyntheticText(bratsyn, os.path.join(input_dir,sdir), os.path.join(output_dir,sdir),recurse)
 
 if __name__ == '__main__':
 
@@ -91,34 +123,8 @@ if __name__ == '__main__':
     output_dir = os.path.expandvars(os.path.expanduser(args.output_dir))
     simple_replacement = args.simple_replacement
 
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
-
-    files = [os.path.join(input_dir, file) for file in os.listdir(input_dir) if file.endswith('.txt')]
-
-    print(f"Processing {len(files)} files...")
-
     brat_synthetic = BratSynthetic(simple_replacement=simple_replacement)
-    for index in range(len(files)):
-        txt_path = files[index]
-        ann_path = os.path.splitext(txt_path)[0] + '.ann'
-
-        if os.path.exists(ann_path):
-            print(f"  [{index+1}]: {os.path.basename(txt_path)}")
-        else:
-            print(f"  [{index+1}]: No ANN file skipping {os.path.basename(txt_path)}.")
-
-        replaced_text, replaced_ann_text = brat_synthetic.syntheticize(txt_path)
-
-        output_txt_path = os.path.join(output_dir, os.path.basename(txt_path))
-        output_ann_path = os.path.splitext(output_txt_path)[0] + '.ann'
-
-        with open(output_txt_path, 'w', newline='\n', encoding='utf-8') as out_file:
-            out_file.write(replaced_text)
-
-        with open(output_ann_path, 'w', newline='\n', encoding='utf-8') as out_ann_file:
-            out_ann_file.write(replaced_ann_text)
+    makeSyntheticText(brat_synthetic, input_dir, output_dir, args.recursive)
 
 
 
-    print(f"Finished Process. Output Dir: {output_dir}")
