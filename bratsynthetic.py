@@ -35,7 +35,6 @@ ZIP
 
 import os
 import argparse
-from pathlib import Path
 
 from bratsynthetic import BratSynthetic
 
