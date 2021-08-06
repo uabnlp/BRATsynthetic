@@ -1,0 +1,46 @@
+#!/bin/bash
+#
+#SBATCH --job-name=bratSyn
+#SBATCH --output=BRATSyn.out
+#SBATCH --error=BRATSyn.err
+#
+# Number of tasks needed for this job. Generally, used with MPI jobs
+#SBATCH --ntasks=1
+#SBATCH --partition=medium
+#
+# Time format = HH:MM:SS, DD-HH:MM:SS
+#SBATCH --time=18:00:00
+#
+# Number of CPUs allocated to each task. 
+#SBATCH --cpus-per-task=4
+#
+# Mimimum memory required per allocated  CPU  in  MegaBytes. 
+#SBATCH --mem-per-cpu=4000
+#
+# Send mail to the email address when the job fails
+#SBATCH --mail-type=FAIL
+#SBATCH --mail-user=ozborn@uab.edu
+
+module load Anaconda3
+
+#source /share/apps/rc/software/Anaconda3/5.2.0/etc/profile.d/conda.sh
+#conda activate /share/apps/rc/software/Anaconda3/5.2.0/envs/DeepNLP
+
+#source /share/apps/rc/software/Anaconda3/2020.11/etc/profile.d/conda.sh
+#eval "$(conda shell.bash hook)"
+. /share/apps/rc/software/Anaconda3/5.2.0/etc/profile.d/conda.sh
+#source /share/apps/rc/software/Anaconda3/2020.11/bin/activate uabdeid
+conda activate /data/user/ozborn/Conda_Env/uabdeid
+
+# Should be 3.8.8 for uabdeid
+python --version
+which conda
+pip list | grep torch
+
+#Run your commands here
+#srun hostname
+#echo $PATH
+
+/data/user/ozborn/Conda_Env/uabdeid/bin/python bratsynthetic.py \
+-i /data/project/sloss/Delirium/BratDeidentifiedFiles \
+-o /data/project/sloss/Delirium/SyntheticFiles/

@@ -71,3 +71,6 @@ USERNAME
 ZIP
 ```
 
+
+## TODO
+* Replacement of names is not hashed, so for example the patient or physician name is not consistently changed to a fake name throughout the note

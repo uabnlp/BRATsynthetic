@@ -1,0 +1,7 @@
+#!/bin/bash
+#https://docs.uabgrid.uab.edu/wiki/Slurm
+#cd src/slurm
+sbatch bin/slurm/deliriumSynthetic.job
+
+# Look for job
+squeue -u ozborn
