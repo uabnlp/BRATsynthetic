@@ -1,14 +1,15 @@
 
 from typing import List, Tuple
-from bratsynthetic.newbrattools import BratFile, BratEntity
 
+from bratsynthetic.newbrattools import BratFile, BratEntity
 from .maker import DateMaker, StreetMaker, HospitalMaker, ZipMaker
+from .maker import DeviceMaker, EmailMaker, FaxMaker, HealthPlanMaker
+from .maker import MedicalRecordMaker, IDNumMaker, UndeterminedMaker, BioIDMaker
+from .maker import OrganizationMaker, TimeMaker, CountryMaker, LocationOtherMaker
 from .maker import PatientMaker, DoctorMaker, StateMaker, AgeMaker
 from .maker import PhoneMaker, CityMaker, UsernameMaker, ProfessionMaker
-from .maker import OrganizationMaker, TimeMaker, CountryMaker, LocationOtherMaker
-from .maker import MedicalRecordMaker, IDNumMaker, UndeterminedMaker, BioIDMaker
-from .maker import DeviceMaker, EmailMaker, FaxMaker, HealthPlanMaker
 from .maker import URLMaker
+
 
 class BratSynthetic:
 
@@ -96,12 +97,23 @@ class BratSynthetic:
             replacement_text = replacement[1]
 
             # assert len(original_entity.spans) == 1  # No support for non-contiguous entities.
-            start_span_index = original_entity.spans[0][0] + delta_span
-            stop_span_index = original_entity.spans[-1][-1] + delta_span
-            new_text = replacement_text.join([new_text[:start_span_index], new_text[stop_span_index:]])
-            new_span = (start_span_index, start_span_index + len(replacement_text))
+            new_spans: List[Tuple[int, int]] = []
+            if original_entity.text == replacement_text:
+                for og_span in original_entity.spans:
+                    new_span = (og_span[0] + delta_span, og_span[1] + delta_span)
+                    new_spans.append(new_span)
+            else:
+                # assert len(original_entity.spans) == 1  # This
+                if len(original_entity.spans) > 1:
+                    print("[WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING]")
+                    print("[WARNING]: PHI Entity is non-contiguous. Entity will be replace with contiguous entity.")
+                    print("[WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING]")
+                start_span_index = original_entity.spans[0][0] + delta_span
+                stop_span_index = original_entity.spans[-1][-1] + delta_span
+                new_text = replacement_text.join([new_text[:start_span_index], new_text[stop_span_index:]])
+                new_spans.append((start_span_index, start_span_index + len(replacement_text)))
 
-            new_entity: BratEntity = BratEntity(original_entity.identifier, original_entity.entity_type, [new_span], replacement_text)
+            new_entity: BratEntity = BratEntity(original_entity.identifier, original_entity.entity_type, new_spans, replacement_text)
             new_brat_annotations.append(new_entity)
             new_brat_annotations.extend(original_entity.applied_direct_attributes)
             new_brat_annotations.extend(original_entity.applied_events)
