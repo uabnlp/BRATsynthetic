@@ -1,6 +1,6 @@
 
 from typing import List, Tuple
-from bratsynthetic.brattools import BratFile, BratTag
+from bratsynthetic.newbrattools import BratFile, BratEntity
 
 from .maker import DateMaker, StreetMaker, HospitalMaker, ZipMaker
 from .maker import PatientMaker, DoctorMaker, StateMaker, AgeMaker
@@ -15,9 +15,9 @@ class BratSynthetic:
     def __init__(self, simple_replacement: bool = True):
         self.simple_replacement = simple_replacement
 
-        self.tag_to_maker = None
+        self.entity_type_to_maker = None
         if not self.simple_replacement:
-            self.tag_to_maker = {
+            self.entity_type_to_maker = {
                 'AGE': AgeMaker(),
                 'BIOID': BioIDMaker(),
                 'CITY': CityMaker(),
@@ -47,10 +47,10 @@ class BratSynthetic:
 
             # Add PHI- prefix for these tags.
             updated_tag_to_maker = {}
-            for key, value in self.tag_to_maker.items():
+            for key, value in self.entity_type_to_maker.items():
                 updated_tag_to_maker[key] = value
                 updated_tag_to_maker[f'PHI-{key}'] = value
-            self.tag_to_maker = updated_tag_to_maker
+            self.entity_type_to_maker = updated_tag_to_maker
 
     def syntheticize(self, brat_txt_path: str) -> Tuple[str, str]:
         """
@@ -58,54 +58,59 @@ class BratSynthetic:
         """
         brat_file = BratFile.load_from_file(brat_txt_path)
 
-        # Filter to simplest annotation tag
-        tags: List[BratTag] = [ann for ann in brat_file.annotations if type(ann) == BratTag]
+        # Filter to simplest annotation entity
+        entities: List[BratEntity] = [ann for ann in brat_file.entities]
 
-        # Find overlapping tags, and only use the longest tag in each group.
-        overlapping_tag_groups: List[List[BratTag]] = self.find_overlapping_tags(tags)
-        tags_to_remove: List[BratTag] = []
+        # Find overlapping tags, and only use the longest entity in each group.
+        # This is because the code that updates the spans of each entity
+        overlapping_entity_groups: List[List[BratEntity]] = self.find_overlapping_tags(entities)
+        entities_to_remove: List[BratEntity] = []
 
-        for tag_group in overlapping_tag_groups:
-            max_len_tag = tag_group[0]
-            for index, tag in enumerate(tag_group):
-                if (tag.end - tag.start) > (max_len_tag.end - max_len_tag.start):
-                    max_len_tag = tag
+        for entity_group in overlapping_entity_groups:
+            max_len_tag = entity_group[0]
+            for index, entity in enumerate(entity_group):
+                if (entity.end() - entity.start()) > (max_len_tag.end() - max_len_tag.start()):
+                    max_len_tag = entity
 
-            for tag in tag_group:
-                if tag != max_len_tag:
-                    tags_to_remove.append(tag)
+            for entity in entity_group:
+                if entity != max_len_tag:
+                    entities_to_remove.append(entity)
 
-        for index, tag_to_remove in enumerate(tags_to_remove):
-            tags.remove(tag_to_remove)
+        for index, entity_to_remove in enumerate(entities_to_remove):
+            entities.remove(entity_to_remove)
 
         new_text = brat_file.text
-        replacements: List[Tuple[BratTag, str]] = []
-        for tag in tags:
-            replacement_text = self.create_replacement_text_for_tag(tag)
-            replacements.append((tag, replacement_text))
+        replacements: List[Tuple[BratEntity, str]] = []
+        for entity in entities:
+            replacement_text = self.create_replacement_text_for_tag(entity)
+            replacements.append((entity, replacement_text))
 
-        #Sorted replacement from first tag in text to last tag in text
-        replacements.sort(key=lambda x: x[0].spans[-1]) #First element of tuple is BratTag
+        #Sorted replacement from first entity in text to last entity in text
+        replacements.sort(key=lambda x: x[0].end()) #First element of tuple is BratEntity
 
         delta_span = 0
-        new_brat_tags: List[BratTag] = []
+        new_brat_annotations: List[BratEntity] = []
         for replacement in replacements:
-            replacement_tag = replacement[0]
-            current_text = replacement_tag.text
+            original_entity = replacement[0]
+            current_text = original_entity.text
             replacement_text = replacement[1]
 
-            start_span_index = replacement_tag.spans[0][0] + delta_span
-            stop_span_index = replacement_tag.spans[-1][-1] + delta_span
+            # assert len(original_entity.spans) == 1  # No support for non-contiguous entities.
+            start_span_index = original_entity.spans[0][0] + delta_span
+            stop_span_index = original_entity.spans[-1][-1] + delta_span
             new_text = replacement_text.join([new_text[:start_span_index], new_text[stop_span_index:]])
             new_span = (start_span_index, start_span_index + len(replacement_text))
 
-            new_brat_tags.append(BratTag(replacement_tag.identifier, replacement_tag.tag_type, [new_span], replacement_text))
+            new_entity: BratEntity = BratEntity(original_entity.identifier, original_entity.entity_type, [new_span], replacement_text)
+            new_brat_annotations.append(new_entity)
+            new_brat_annotations.extend(original_entity.applied_direct_attributes)
+            new_brat_annotations.extend(original_entity.applied_events)
 
             delta_span += (len(replacement_text) - len(current_text))
 
-        new_brat_tags.reverse()
+        new_brat_annotations.reverse()
 
-        new_brat_file = BratFile(new_text, new_brat_tags)
+        new_brat_file = BratFile(new_text, new_brat_annotations)
 
         return new_brat_file.text, new_brat_file.to_brat_ann()
 
@@ -117,7 +122,7 @@ class BratSynthetic:
             return ((a[0] <= b[1] and a[1] >= b[0]) or
                     (b[0] <= a[1] <= b[1]))
 
-    def find_overlapping_tags(self, tags: List[BratTag]) -> List[List[BratTag]]:
+    def find_overlapping_tags(self, tags: List[BratEntity]) -> List[List[BratEntity]]:
         all_spans: List[Tuple[int, int]] = []
 
         for tag in tags:
@@ -147,23 +152,23 @@ class BratSynthetic:
 
         return overlapping_tags
 
-    def create_replacement_text_for_tag(self, tag:BratTag) -> str:
+    def create_replacement_text_for_tag(self, entity: BratEntity) -> str:
         if self.simple_replacement:
-            if tag.tag_type in self.tag_to_maker.keys():
-                return f'[**{tag.tag_type}**]'
+            if entity.entity_type in self.entity_type_to_maker.keys():
+                return f'[**{entity.entity_type}**]'
             else:
-                return tag.text
+                return entity.text
         else:
-            return self.create_fancy_replacement_text(tag)
+            return self.create_fancy_replacement_text(entity)
 
-    def create_fancy_replacement_text(self, tag: BratTag) -> str:
+    def create_fancy_replacement_text(self, entity: BratEntity) -> str:
 
-        for key, value in self.tag_to_maker.items():
-            if tag.tag_type.upper().startswith(key):
-                return value.make(tag.text)
+        for key, value in self.entity_type_to_maker.items():
+            if entity.entity_type.upper().startswith(key):
+                return value.make(entity.text)
         # ELSE
-        print(f'    No Maker for tag type {tag.tag_type}. Ignoring.')
-        return tag.text
+        print(f'    No Maker for tag type {entity.entity_type}. Ignoring.')
+        return entity.text
 
 
 
