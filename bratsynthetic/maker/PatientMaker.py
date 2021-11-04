@@ -7,7 +7,7 @@ class PatientMaker(Maker):
 
 
     def make(self, input: str) -> str:
-        with open('consistent_name.yaml') as cf_file:
+        with open('config.yaml') as cf_file:
             config = yaml.safe_load(cf_file.read())
 
         if config['show_consistent_name']:
