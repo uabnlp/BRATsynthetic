@@ -1,4 +1,3 @@
-
 from faker import Faker
 import random
 import sys
@@ -7,11 +6,16 @@ SEED = random.randint(~sys.maxsize, sys.maxsize)
 Faker.seed(SEED)
 random.seed = SEED
 
+
 class Maker:
 
     def __init__(self):
         self.fake = Faker()
         self.show_replacements = True
+        self.patient_reference_name = "None"
+        self.patient_input_name = "None"
+        self.patient_output_name = ""
+        self.patient_dict = {}
 
     def make_matching_alphanumeric(self, template: str) -> str:
         """
@@ -32,7 +36,6 @@ class Maker:
                 output = output.replace(character, random.choice(replacements))
 
         return output
-
 
     def match_case(self, template: str, string: str) -> str:
         """
@@ -57,5 +60,4 @@ class Maker:
             return string.upper()
         # ELSE
         print(f"    Unhandled match_case: {template}")
-
         return string
