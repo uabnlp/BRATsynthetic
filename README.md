@@ -2,7 +2,7 @@
 
 ## About
 
-Python tool that generates realistic synthetic text for a superset of I2B2 2014 personal health information entity types.
+Python tool that generates realistic synthetic text for a superset of I2B2 2014 personal health information entity types. A poster was published in AMIA (https://knowledge.amia.org/73035-amia-1.4612663/t004-1.4613775/t004-1.4613776/3478476-1.4613879/3478476-1.4613880?qr=1) and a paper is pending.
 
 This tool takes annotated text from Brat (https://brat.nlplab.org) and replaces personal information with synthetic data. It will attempt to match the format of the text.
 
@@ -74,3 +74,4 @@ ZIP
 
 ## TODO
 * Modification with respect to Date offsetting.
+* Replace non-contiguous entities
