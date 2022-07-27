@@ -1,6 +1,7 @@
-from faker import Faker
 import random
 import sys
+
+from faker import Faker
 
 SEED = random.randint(~sys.maxsize, sys.maxsize)
 Faker.seed(SEED)
@@ -36,6 +37,7 @@ class Maker:
                 output = output.replace(character, random.choice(replacements))
 
         return output
+
 
     def match_case(self, template: str, string: str) -> str:
         """
