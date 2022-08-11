@@ -1,12 +1,13 @@
+import random
+
 from .Maker import Maker
 
-import random
 
 class HealthPlanMaker(Maker):
 
     _insurance = ['state insurance', 'Kaiser', 'medicare', 'medicaid', 'anthem', 'united', 'aetna']
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         output = random.choice(self._insurance)

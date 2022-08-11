@@ -3,7 +3,7 @@ from .Maker import Maker
 
 class UsernameMaker(Maker):
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         #Guess email address
@@ -14,8 +14,6 @@ class UsernameMaker(Maker):
 
         output = self.match_case(input, output)
 
-        if self.show_replacements:
-            print(f'    UsernameMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.match_case(self.fake.user_name())
 

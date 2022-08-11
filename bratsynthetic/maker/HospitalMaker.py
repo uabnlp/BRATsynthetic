@@ -1,7 +1,7 @@
 
-from .Maker import Maker
-
 import random
+
+from .Maker import Maker
 
 _hospital_list = [
 'Andalusia Health',
@@ -249,7 +249,7 @@ class HospitalMaker(Maker):
         else:
             return False
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         if self.is_acronym(input):
@@ -259,8 +259,7 @@ class HospitalMaker(Maker):
         else:
             output = random.choice(_hospital_list)
         output = self.match_case(input, output)
-        if self.show_replacements:
-            print(f"    HospitalMaker: {input} -> {output}")
+
         if output.upper() == 'UNMATCHED':
             output = self.match_case(random.choice(_hospital_list))
 

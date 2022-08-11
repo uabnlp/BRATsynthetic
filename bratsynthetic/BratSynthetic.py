@@ -1,7 +1,8 @@
-
-from typing import List, Tuple
+from collections import defaultdict
+from typing import List, Tuple, Dict
 
 from bratsynthetic.newbrattools import BratFile, BratEntity
+from .BratSyntheticConfig import BratSyntheticConfig
 from .maker import DateMaker, StreetMaker, HospitalMaker, ZipMaker
 from .maker import DeviceMaker, EmailMaker, FaxMaker, HealthPlanMaker
 from .maker import MedicalRecordMaker, IDNumMaker, UndeterminedMaker, BioIDMaker
@@ -13,37 +14,37 @@ from .maker import URLMaker
 
 class BratSynthetic:
 
-    def __init__(self, simple_replacement: bool = True):
-        self.simple_replacement = simple_replacement
+    def __init__(self, config: BratSyntheticConfig):
+        self.simple_replacement = True if config.general.default_strategy == 'simple' else False
 
         self.entity_type_to_maker = None
         if not self.simple_replacement:
             self.entity_type_to_maker = {
-                'AGE': AgeMaker(),
-                'BIOID': BioIDMaker(),
-                'CITY': CityMaker(),
-                'COUNTRY': CountryMaker(),
-                'DATE': DateMaker(),
-                'DEVICE': DeviceMaker(),
-                'DOCTOR': DoctorMaker(),
-                'EMAIL': EmailMaker(),
-                'FAX': FaxMaker(),
-                'HEALTHPLAN': HealthPlanMaker(),
-                'HOSPITAL': HospitalMaker(),
-                'IDNUM': IDNumMaker(),
-                'LOCATION-OTHER': LocationOtherMaker(),
-                'MEDICALRECORD': MedicalRecordMaker(),
-                'ORGANIZATION': OrganizationMaker(),
-                'PATIENT': PatientMaker(),
-                'PHONE': PhoneMaker(),
-                'PROFESSION': ProfessionMaker(),
-                'STATE': StateMaker(),
-                'STREET': StreetMaker(),
-                'TIME': TimeMaker(),
-                'UNDETERMINED': UndeterminedMaker(),
-                'URL': URLMaker(),
-                'USERNAME': UsernameMaker(),
-                'ZIP': ZipMaker(),
+                'AGE': AgeMaker(config),
+                'BIOID': BioIDMaker(config),
+                'CITY': CityMaker(config),
+                'COUNTRY': CountryMaker(config),
+                'DATE': DateMaker(config),
+                'DEVICE': DeviceMaker(config),
+                'DOCTOR': DoctorMaker(config),
+                'EMAIL': EmailMaker(config),
+                'FAX': FaxMaker(config),
+                'HEALTHPLAN': HealthPlanMaker(config),
+                'HOSPITAL': HospitalMaker(config),
+                'IDNUM': IDNumMaker(config),
+                'LOCATION-OTHER': LocationOtherMaker(config),
+                'MEDICALRECORD': MedicalRecordMaker(config),
+                'ORGANIZATION': OrganizationMaker(config),
+                'PATIENT': PatientMaker(config),
+                'PHONE': PhoneMaker(config),
+                'PROFESSION': ProfessionMaker(config),
+                'STATE': StateMaker(config),
+                'STREET': StreetMaker(config),
+                'TIME': TimeMaker(config),
+                'UNDETERMINED': UndeterminedMaker(config),
+                'URL': URLMaker(config),
+                'USERNAME': UsernameMaker(config),
+                'ZIP': ZipMaker(config),
             }
 
             # Add PHI- prefix for these tags.
@@ -81,10 +82,8 @@ class BratSynthetic:
             entities.remove(entity_to_remove)
 
         new_text = brat_file.text
-        replacements: List[Tuple[BratEntity, str]] = []
-        for entity in entities:
-            replacement_text = self.create_replacement_text_for_tag(entity)
-            replacements.append((entity, replacement_text))
+
+        replacements: List[Tuple[BratEntity, str]] = self.create_replacement_text_for_entities(entities)
 
         #Sorted replacement from first entity in text to last entity in text
         replacements.sort(key=lambda x: x[0].end()) #First element of tuple is BratEntity
@@ -164,23 +163,30 @@ class BratSynthetic:
 
         return overlapping_tags
 
-    def create_replacement_text_for_tag(self, entity: BratEntity) -> str:
-        if self.simple_replacement:
-            if entity.entity_type in self.entity_type_to_maker.keys():
-                return f'[**{entity.entity_type}**]'
+
+    def create_replacement_text_for_entities(self, entities: List[BratEntity]) -> List[Tuple[BratEntity, str]]:
+        type_to_entities: Dict[str, List[str]] = defaultdict(lambda: [])
+        for entity in entities:
+            type_to_entities[entity.entity_type].append(entity)
+
+        ret_val: List[Tuple[BratEntity, str]] = []
+        for etype in type_to_entities.keys():
+            print(f'Creating {len(type_to_entities[etype])} replacements for {etype}')
+            if etype not in self.entity_type_to_maker.keys():
+                for entity in type_to_entities[etype]:
+                    ret_val.append((entity, entity.text))
+            elif self.simple_replacement:
+                for entity in type_to_entities[etype]:
+                    ret_val.append((entity, f'[**{etype}**]'))
             else:
-                return entity.text
-        else:
-            return self.create_fancy_replacement_text(entity)
+                for key, value in self.entity_type_to_maker.items():
+                    if etype.upper().startswith(key):
+                        entities = type_to_entities[etype]
 
-    def create_fancy_replacement_text(self, entity: BratEntity) -> str:
+                        results = value.make([entity.text for entity in entities])
+                        ret_val = list(zip(entities, results))
 
-        for key, value in self.entity_type_to_maker.items():
-            if entity.entity_type.upper().startswith(key):
-                return value.make(entity.text)
-        # ELSE
-        print(f'    No Maker for tag type {entity.entity_type}. Ignoring.')
-        return entity.text
+        return ret_val
 
 
 

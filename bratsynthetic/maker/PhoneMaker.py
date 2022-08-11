@@ -1,7 +1,7 @@
-from .Maker import Maker
-
 import random
 import re
+
+from .Maker import Maker
 
 _area_codes = [
 '201',
@@ -460,7 +460,7 @@ class PhoneMaker(Maker):
         regex = regex.replace('%d', r'\d')
         return regex
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         patterns = [
@@ -488,9 +488,6 @@ class PhoneMaker(Maker):
         elif re.fullmatch(r'\d{,10}', input):
             output = self.make_matching_alphanumeric(input)
 
-
-        if self.show_replacements:
-            print(f'    PhoneMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.make_matching_alphanumeric(input)
 

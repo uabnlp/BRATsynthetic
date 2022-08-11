@@ -1,11 +1,12 @@
 
+import re
+
 from .Maker import Maker
 
-import re
 
 class StreetMaker(Maker):
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         # Numbered Street Address
@@ -16,8 +17,7 @@ class StreetMaker(Maker):
             output = self.fake.street_name()
 
         output = self.match_case(input, output)
-        if self.show_replacements:
-            print(f"    StreetMaker: {input} -> {output}")
+
         if output == 'UNMATCHED':
             output = self.fake.street_address()
 

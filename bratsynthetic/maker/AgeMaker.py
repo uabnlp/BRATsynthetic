@@ -1,11 +1,12 @@
+import random
+import re
+
 from .Maker import Maker
 
-import re
-import random
 
 class AgeMaker(Maker):
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         while True:
@@ -36,8 +37,6 @@ class AgeMaker(Maker):
             break
 
         output = self.match_case(input, output)
-        if self.show_replacements:
-            print(f'    AgeMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = str(random.randint(18, 79))
 

@@ -3,7 +3,7 @@ from .Maker import Maker
 
 class BioIDMaker(Maker):
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         output = self.make_matching_alphanumeric(input)

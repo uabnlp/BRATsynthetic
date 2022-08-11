@@ -1,6 +1,6 @@
-from .Maker import Maker
-
 import random
+
+from .Maker import Maker
 
 _jobs = [
 "Academic librarian",
@@ -127,7 +127,6 @@ _jobs = [
 "Contracting civil engineer",
 "Contractor",
 "Control and instrumentation engineer",
-"Copy",
 "Copywriter",
 "Corporate investment banker",
 "Corporate treasurer",
@@ -519,7 +518,7 @@ _job_vehicles = [
 
 class ProfessionMaker(Maker):
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         if input in _job_vehicles:
@@ -529,8 +528,6 @@ class ProfessionMaker(Maker):
 
         output = self.match_case(input, output)
 
-        if self.show_replacements:
-            print(f'    ProfessionMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.match_case(random.choice(_jobs))
 

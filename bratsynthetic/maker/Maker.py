@@ -1,7 +1,10 @@
 import random
 import sys
+from typing import List, Dict
 
 from faker import Faker
+
+from bratsynthetic import BratSyntheticConfig
 
 SEED = random.randint(~sys.maxsize, sys.maxsize)
 Faker.seed(SEED)
@@ -10,13 +13,68 @@ random.seed = SEED
 
 class Maker:
 
-    def __init__(self):
-        self.fake = Faker()
-        self.show_replacements = True
-        self.patient_reference_name = "None"
-        self.patient_input_name = "None"
-        self.patient_output_name = ""
-        self.patient_dict = {}
+    def __init__(self, config: BratSyntheticConfig):
+        self.fake: Faker = Faker()
+        self.config: BratSyntheticConfig = config
+
+
+    """
+    Template method. Subclasses should fill this in.
+    """
+    def make_one(self, input: str) -> str:
+        output: str = 'UNMATCHED'
+        if self.config.general.show_replacements:
+            print(f"{self.__class__.__name__} - : {input} -> {output}")
+        return output
+
+    def make(self, input_list: List[str]) -> List[str]:
+        strat_func = self.get_strategy()
+
+        output_list = strat_func(input_list)
+        return output_list
+
+    def get_transition_probability(self):
+        return self.config.general.default_transition_probability
+
+    def get_strategy(self) -> str :
+        strat:str = self.config.general.default_strategy
+
+        if strat == 'markov':
+            transition_probability:float = self.get_transition_probability()
+            strat_func = lambda input_list: self.make_markov(input_list, transition_probability)
+        if strat == 'consistent':
+            strat_func = lambda input_list: self.make_markov(input_list, 0.0)
+        if strat == 'random':
+            strat_func = lambda input_list: self.make_markov(input_list, 1.0)
+
+        return strat_func
+
+    def make_markov(self, input_list:List[str], transition_probability: float = 0.5):
+        ret_list: List[str] = []
+
+        replacements: Dict[str, str] = {}
+
+        for original_input in input_list:
+
+            do_transistion = random.uniform(0, 1) >= transition_probability
+
+            input = original_input.strip().upper()
+            replacement = None
+            if input in replacements and not do_transistion:
+                replacement = self.match_case(original_input, replacements[input])
+            else:
+                replacement = self.make_one(original_input)
+                replacements[input] = replacement
+
+            output = replacement
+
+            if self.config.general.show_replacements:
+                print(f"    {self.__class__.__name__} - : {original_input} -> {output}")
+
+            ret_list.append(output)
+
+        return ret_list
+
 
     def make_matching_alphanumeric(self, template: str) -> str:
         """

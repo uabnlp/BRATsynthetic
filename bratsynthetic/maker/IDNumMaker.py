@@ -1,7 +1,7 @@
-from .Maker import Maker
-
-import re
 import random
+import re
+
+from .Maker import Maker
 
 _nouns = [
 'Actor',
@@ -193,9 +193,7 @@ _nouns = [
 
 class IDNumMaker(Maker):
 
-
-
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         if re.fullmatch(r'[a-z]+', input, re.IGNORECASE):
@@ -210,8 +208,6 @@ class IDNumMaker(Maker):
 
         output = self.match_case(input, output)
 
-        if self.show_replacements:
-            print(f'    IDNumMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.match_case(random.choice(_nouns))
 

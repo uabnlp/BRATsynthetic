@@ -1,10 +1,11 @@
+import re
+
 from .Maker import Maker
 
-import re
 
 class DoctorMaker(Maker):
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         if re.fullmatch(r'\w+,.*', input):    # Assume [LAST], [FIRST]
@@ -15,8 +16,7 @@ class DoctorMaker(Maker):
             output = self.fake.name()
 
         output = self.match_case(input, output)
-        if self.show_replacements:
-            print(f'    DoctorMaker: {input} -> {output}')
+
         if output.upper() == 'UNMATCHED':
             output = self.fake.name()
 

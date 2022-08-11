@@ -2,7 +2,7 @@ from .Maker import Maker
 
 class URLMaker(Maker):
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         output = self.fake.url()

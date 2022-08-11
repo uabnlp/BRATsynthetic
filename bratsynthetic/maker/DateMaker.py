@@ -2,13 +2,13 @@ import random
 import re
 
 from .Maker import Maker
-from .TimeMaker import TimeMaker
+from .. import BratSyntheticConfig
 
 
 class DateMaker(Maker):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, config: BratSyntheticConfig):
+        super().__init__(config)
         self.days_of_week_long = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
                                   'Thurday', 'satruday']
         self.days_of_week_short = ['mon', 'tues?', 'wen', 'wed', 'thur?', 'thr', 'thurs', 'fri', 'sat', 'sun', 'weds']
@@ -105,7 +105,7 @@ class DateMaker(Maker):
     def fake_season(self):
         return random.choice(self.seasons)
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         month_short_regex = '(' + '|'.join(self.months_short) + ')'
@@ -307,7 +307,7 @@ class DateMaker(Maker):
 
 
         if re.fullmatch(r'\d{4}', input):
-            output = TimeMaker().make(input)
+            output = self.fake.date('%Y')
         elif re.fullmatch(r'\d{4}-\d{4}', input):
             begin, end = input.split('-')
             offset = int(end) - int(begin)
@@ -431,8 +431,7 @@ class DateMaker(Maker):
         elif re.fullmatch(r'(' + days_of_week_letter_regex + r', ?)+' + days_of_week_letter_regex, input,
                           re.IGNORECASE):
             output = self.match_case(input, random.choice(['M, W, F', 'Tu, Th', 'Sat, Sun', "M, W", "W, Th, F"]))
-        if self.show_replacements:
-            print(f'    DateMaker: {input} -> {output}')
+
         if output.upper() == 'UNMATCHED':
             output = self.fake.date()
         return output

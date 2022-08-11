@@ -33,48 +33,31 @@ ZIP
 
 """
 
-import os
 import argparse
+import os
 
-from bratsynthetic import BratSynthetic
+from bratsynthetic import BratSynthetic, BratSyntheticConfig
 
-def check_args(args: argparse.Namespace):
+
+def load_config_file(config_file_path: str) -> BratSyntheticConfig:
     """
     Makes sure input directory exists. Creates output directory if it does not exist.
     """
-
-    if not (os.path.exists(args.input_dir) and os.path.isdir(args.input_dir)):
-        print(f"Input dir does not exist: {args.input_dir}")
-        exit(-1)
-
-    if not (os.path.exists(args.output_dir) and os.path.isdir(args.output_dir)):
-        print(f"Output dir does not exist. Creating {args.output_dir}")
-        os.makedirs(args.output_dir)
+    return BratSyntheticConfig(config_file_path)
 
 
 def parse_args() -> argparse.Namespace:
     """
     Parse Program Arguments
 
-    -i / --input_dir - Input for BRAT files to process
-    -o / --output_dir - Directory to output new synthetic text files to.
+    -c / --config_file - Configuration Parameters (See Sample File config.yaml)
     """
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-i', '--input_dir', type=str, metavar='INPUT_DIR',
+    parser.add_argument('-c', '--config_file', type=str, metavar='FILE_PATH',
                         required=True,
-                        help='Input for BRAT files to process')
-
-    parser.add_argument('-o', '--output_dir', type=str, metavar='OUTPUT_DIR',
-                        required=True,
-                        help='Directory to output new synthetic text files to.')
-
-    parser.add_argument('-s', '--simple_replacement', default=False, action='store_true',
-                        help='If this option is present will do a simple of replacement of PHI. PHI text will be replaced with [**{PHI-TAGNAME}**].')
-
-    parser.add_argument('-r', '--recursive', default=False, action='store_true',
-                        help='If this option is set, all directories will be processed recursively')
+                        help='Configuration File')
 
     args = parser.parse_args()
 
@@ -116,14 +99,10 @@ def makeSyntheticText(bratsyn, input_dir, output_dir,recurse):
 if __name__ == '__main__':
 
     args = parse_args()
-    check_args(args)
+    config: BratSyntheticConfig = load_config_file(args.config_file)
 
-    input_dir = os.path.expandvars(os.path.expanduser(args.input_dir))
-    output_dir = os.path.expandvars(os.path.expanduser(args.output_dir))
-    simple_replacement = args.simple_replacement
-
-    brat_synthetic = BratSynthetic(simple_replacement=simple_replacement)
-    makeSyntheticText(brat_synthetic, input_dir, output_dir, args.recursive)
+    brat_synthetic = BratSynthetic(config=config)
+    makeSyntheticText(brat_synthetic, config.general.input_dir, config.general.output_dir, config.general.recursive)
 
 
 

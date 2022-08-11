@@ -1,1 +1,15 @@
-show_consistent_name: True
+general:
+  # input_directory - full path
+  input_directory: /Users/tobiasoleary/web/servers/brat-github/data/i2b2_new
+  # output_directory - full path
+  output_directory: /Users/tobiasoleary/web/servers/brat-github/data/i2b2_deid
+  # recursive into sub-directories
+  recursive: True
+  # show replacements - print out replacements
+  show_replacements: True
+  # default_strategy: simple, markov, consistent, random
+  default_strategy: markov
+  # only used for markov - each time a replacements a random number between 0.0 and 1.0 is generated
+  # if it is above the transition probability the
+  default_transition_probability: 0.5
+

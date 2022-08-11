@@ -3,7 +3,7 @@ from .Maker import Maker
 
 class OrganizationMaker(Maker):
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         if len(input) < 5:
@@ -13,8 +13,6 @@ class OrganizationMaker(Maker):
 
         output = self.match_case(input, output)
 
-        if self.show_replacements:
-            print(f'    OrganizationMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.match_case(self.fake.company())
 

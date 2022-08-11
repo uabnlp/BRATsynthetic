@@ -1,12 +1,13 @@
+import random
+import re
+import string
+
 from .Maker import Maker
 
-import re
-import random
-import string
 
 class UndeterminedMaker(Maker):
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
 

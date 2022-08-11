@@ -1,11 +1,12 @@
+import random
+import re
+
 from .Maker import Maker
 
-import re
-import random
 
 class TimeMaker(Maker):
 
-    def make(self, input: str) -> str:
+    def make_one(self, input: str) -> str:
         output = 'UNMATCHED'
 
         add_colon = ':' in input
@@ -29,8 +30,6 @@ class TimeMaker(Maker):
 
         output = self.match_case(input, output)
 
-        if self.show_replacements:
-            print(f'    TimeMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.fake.time('%H%M')
 
