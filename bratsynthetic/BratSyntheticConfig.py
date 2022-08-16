@@ -5,6 +5,15 @@ from typing import List
 import yaml
 
 
+class OverrideSettings:
+    """
+    Setting that override the general settings for a particular maker class.
+    """
+
+    def __init__(self, cls_config):
+        self.strategy = cls_config['strategy'] if 'strategy' in cls_config else None
+        self.transition_probability = cls_config['transition_probability'] if 'transition_probability' in cls_config else None
+
 class GeneralSettings:
 
     def __init__(self, yaml_config):
@@ -55,6 +64,20 @@ class BratSyntheticConfig:
         with open(config_yaml_file_path, 'r') as config_yaml_file:
             config = yaml.safe_load(config_yaml_file.read())
             self.general = GeneralSettings(config)
+            self.override_settings = {}
+            for key in config.keys():
+                if key != 'general':
+                    self.override_settings[key] = OverrideSettings(config[key])
+
+    def strategy_name_for_class(self, cls) -> str:
+        cls_name = cls.__name__
+        strat = None
+        if cls_name in self.override_settings:
+            strat = self.override_settings[cls_name].strategy
+        if strat is None:
+            strat = self.general.default_strategy
+
+        return strat
 
 
 

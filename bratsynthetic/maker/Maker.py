@@ -38,6 +38,7 @@ class Maker:
 
     def get_strategy(self) -> str :
         strat:str = self.config.general.default_strategy
+        self.config.strategy_name_for_class(type(self))
 
         if strat == 'markov':
             transition_probability:float = self.get_transition_probability()
