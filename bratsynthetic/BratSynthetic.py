@@ -171,13 +171,13 @@ class BratSynthetic:
 
         ret_val: List[Tuple[BratEntity, str]] = []
         for etype in type_to_entities.keys():
-            print(f'Creating {len(type_to_entities[etype])} replacements for {etype}')
-            if etype not in self.entity_type_to_maker.keys():
-                for entity in type_to_entities[etype]:
-                    ret_val.append((entity, entity.text))
-            elif self.simple_replacement:
+            # print(f'Creating {len(type_to_entities[etype])} replacements for {etype}')
+            if self.simple_replacement:
                 for entity in type_to_entities[etype]:
                     ret_val.append((entity, f'[**{etype}**]'))
+            elif etype not in self.entity_type_to_maker.keys():
+                for entity in type_to_entities[etype]:
+                    ret_val.append((entity, entity.text))
             else:
                 for key, value in self.entity_type_to_maker.items():
                     if etype.upper().startswith(key):
