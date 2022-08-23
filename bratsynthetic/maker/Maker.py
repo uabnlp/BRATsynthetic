@@ -6,6 +6,7 @@ from faker import Faker
 
 from bratsynthetic import BratSyntheticConfig
 
+
 class Maker:
 
     def __init__(self, config: BratSyntheticConfig):
@@ -118,5 +119,6 @@ class Maker:
         elif template.isupper():
             return string.upper()
         # ELSE
-        print(f"    Unhandled match_case: {template}")
+        if re.search('[a-zA-Z]', template):
+            print(f"    Unhandled match_case: {template}")
         return string
