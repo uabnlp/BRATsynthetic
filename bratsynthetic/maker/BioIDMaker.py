@@ -8,7 +8,7 @@ class BioIDMaker(Maker):
 
         output = self.make_matching_alphanumeric(input)
 
-        if self.show_replacements:
+        if self.config.general.show_replacements:
             print(f'    BioIDMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.make_matching_alphanumeric(input)
