@@ -1,19 +1,17 @@
 import random
-import sys
+import re
 from typing import List, Dict
 
 from faker import Faker
 
 from bratsynthetic import BratSyntheticConfig
 
-SEED = random.randint(~sys.maxsize, sys.maxsize)
-Faker.seed(SEED)
-random.seed = SEED
-
-
 class Maker:
 
     def __init__(self, config: BratSyntheticConfig):
+        SEED = config.general.seed
+        Faker.seed(SEED)
+        random.seed = SEED
         self.fake: Faker = Faker()
         self.config: BratSyntheticConfig = config
 
