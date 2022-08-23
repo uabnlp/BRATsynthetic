@@ -64,9 +64,11 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def makeSyntheticText(bratsyn, input_dir, output_dir,recurse):
+def makeSyntheticText(bratsyn, input_dir, output_dir, recurse):
+    if not os.path.exists(input_dir):
+        return
     if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
     files = [os.path.join(input_dir, file) for file in os.listdir(input_dir) if file.endswith('.txt')]
     print(f"Processing {len(files)} files...")
 
