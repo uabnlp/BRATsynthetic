@@ -37,7 +37,7 @@ class Maker:
         return self.config.general.default_transition_probability
 
     def get_strategy(self) -> str :
-        strat:str = self.config.general.default_strategy
+        strat: str = self.config.general.default_strategy
 
         if strat == 'markov':
             transition_probability:float = self.get_transition_probability()
@@ -56,7 +56,7 @@ class Maker:
 
         for original_input in input_list:
 
-            do_transistion = random.uniform(0, 1) >= transition_probability
+            do_transistion = random.uniform(0, 1) < transition_probability
 
             input = original_input.strip().upper()
             replacement = None
