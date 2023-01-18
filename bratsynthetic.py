@@ -90,11 +90,12 @@ def makeSyntheticText(bratsyn, input_dir, output_dir,recurse):
         with open(output_ann_path, 'w', newline='\n', encoding='utf-8') as out_ann_file:
             out_ann_file.write(replaced_ann_text)
     print(f"Finished Process. Output Dir: {output_dir}")
-    
-    if(recurse):
-        for _,child_dirs,_ in os.walk(input_dir):
-            for sdir in child_dirs:
-                makeSyntheticText(bratsyn, os.path.join(input_dir,sdir), os.path.join(output_dir,sdir),recurse)
+
+    if recurse:
+        subdirs = [d.path.replace(input_dir, '').lstrip('\\/') for d in os.scandir(input_dir) if d.is_dir()]
+        for sdir in list(subdirs):
+            if os.path.join(input_dir, sdir) != output_dir:
+                makeSyntheticText(bratsyn, os.path.join(input_dir, sdir), os.path.join(output_dir, sdir), recurse)
 
 if __name__ == '__main__':
 
