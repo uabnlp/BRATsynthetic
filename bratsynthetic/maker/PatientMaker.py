@@ -15,31 +15,11 @@ random.seed = SEED
 
 class PatientMaker(Maker):
 
-
-
     def make_random(self, input_list: List[str]) -> List[str]:
-        ret_val: List[str] = []
-        for input in input_list:
-            words = input.split(' ')
-
-            if re.fullmatch(r'\w+,.*', input):  # Assume [LAST], [FIRST]
-                output = f'{self.fake.last_name()}, {self.fake.first_name()}'
-            elif len(words) == 1:
-                output = self.fake.last_name()
-            else:
-                output = self.fake.name()
-
-            output = self.match_case(input, output)
-            if self.show_replacements:
-                print(f'    PatientMaker: {input} -> {output}')
-            if output.upper() == 'UNMATCHED':
-                output = self.fake.name()
-
-            ret_val.append(output)
-        return ret_val
+        return self.make_markov(self, input_list, 1.0)
 
     def make_consistent_name(self, input_list: List[str]) -> List[str]:
-        return self.make_markov(self, input_list, -1.0)
+        return self.make_markov(self, input_list, 0.0)
 
     def make_markov(self, input_list: List[str], transistion_probablity: float = 0.5) -> List[str]:
         ret_list: List[str] = []
@@ -172,12 +152,10 @@ class PatientMaker(Maker):
             return [] #empty list
 
         ret_val: List[str] = []
-        if config['show_consistent_name']:
+        if self.config.general.default_strategy == 'consistent':
             ret_val = self.make_consistent_name(input)
-        elif config['use_markov_name']:
-            markov_switch_percentage = 0.5
-            if config['markov_switch_percentage']:
-                markov_switch_percentage = float(config['markov_switch_percentage'])
+        elif self.config.general.default_strategy == 'markov':
+            markov_switch_percentage = self.config.general.default_transition_probability
             ret_val = self.make_markov(input, markov_switch_percentage)
         else:
             ret_val = self.make_random(input)
