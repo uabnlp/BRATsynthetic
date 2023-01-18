@@ -16,47 +16,44 @@ class BratSynthetic:
 
     def __init__(self, config: BratSyntheticConfig):
         self.simple_replacement = True if config.general.default_strategy == 'simple' else False
+        self.entity_type_to_maker = {
+            'AGE': AgeMaker(config),
+            'BIOID': BioIDMaker(config),
+            'CITY': CityMaker(config),
+            'COUNTRY': CountryMaker(config),
+            'DATE': DateMaker(config),
+            'DEVICE': DeviceMaker(config),
+            'DOCTOR': DoctorMaker(config),
+            'EMAIL': EmailMaker(config),
+            'FAX': FaxMaker(config),
+            'HEALTHPLAN': HealthPlanMaker(config),
+            'HOSPITAL': HospitalMaker(config),
+            'IDNUM': IDNumMaker(config),
+            'LOCATION-OTHER': LocationOtherMaker(config),
+            'MEDICALRECORD': MedicalRecordMaker(config),
+            'ORGANIZATION': OrganizationMaker(config),
+            'PATIENT': PatientMaker(config),
+            'PHONE': PhoneMaker(config),
+            'PROFESSION': ProfessionMaker(config),
+            'STATE': StateMaker(config),
+            'STREET': StreetMaker(config),
+            'TIME': TimeMaker(config),
+            'UNDETERMINED': UndeterminedMaker(config),
+            'URL': URLMaker(config),
+            'USERNAME': UsernameMaker(config),
+            'ZIP': ZipMaker(config),
+        }
 
-        self.entity_type_to_maker = None
-        if not self.simple_replacement:
-            self.entity_type_to_maker = {
-                'AGE': AgeMaker(config),
-                'BIOID': BioIDMaker(config),
-                'CITY': CityMaker(config),
-                'COUNTRY': CountryMaker(config),
-                'DATE': DateMaker(config),
-                'DEVICE': DeviceMaker(config),
-                'DOCTOR': DoctorMaker(config),
-                'EMAIL': EmailMaker(config),
-                'FAX': FaxMaker(config),
-                'HEALTHPLAN': HealthPlanMaker(config),
-                'HOSPITAL': HospitalMaker(config),
-                'IDNUM': IDNumMaker(config),
-                'LOCATION-OTHER': LocationOtherMaker(config),
-                'MEDICALRECORD': MedicalRecordMaker(config),
-                'ORGANIZATION': OrganizationMaker(config),
-                'PATIENT': PatientMaker(config),
-                'PHONE': PhoneMaker(config),
-                'PROFESSION': ProfessionMaker(config),
-                'STATE': StateMaker(config),
-                'STREET': StreetMaker(config),
-                'TIME': TimeMaker(config),
-                'UNDETERMINED': UndeterminedMaker(config),
-                'URL': URLMaker(config),
-                'USERNAME': UsernameMaker(config),
-                'ZIP': ZipMaker(config),
-            }
-
-            # Add PHI- prefix for these tags.
-            updated_tag_to_maker = {}
-            for key, value in self.entity_type_to_maker.items():
-                updated_tag_to_maker[key] = value
-                updated_tag_to_maker[f'PHI-{key}'] = value
-            self.entity_type_to_maker = updated_tag_to_maker
+        # Add PHI- prefix for these tags.
+        updated_tag_to_maker = {}
+        for key, value in self.entity_type_to_maker.items():
+            updated_tag_to_maker[key] = value
+            updated_tag_to_maker[f'PHI-{key}'] = value
+        self.entity_type_to_maker = updated_tag_to_maker
 
     def syntheticize(self, brat_txt_path: str) -> Tuple[str, str]:
         """
-        Returns syntheticize text and text for annotation file.
+        Returns synthetic text and text for annotation file.
         """
         brat_file = BratFile.load_from_file(brat_txt_path)
 
@@ -79,7 +76,8 @@ class BratSynthetic:
                     entities_to_remove.append(entity)
 
         for index, entity_to_remove in enumerate(entities_to_remove):
-            entities.remove(entity_to_remove)
+            if entity_to_remove in entities:
+                entities.remove(entity_to_remove)
 
         new_text = brat_file.text
 
@@ -125,7 +123,6 @@ class BratSynthetic:
 
         return new_brat_file.text, new_brat_file.to_brat_ann()
 
-
     def _do_spans_overlap(self, a: Tuple[int, int], b: Tuple[int, int]) -> bool:
         if a[0] == a[1] or b[0] == b[1]:    # if either empty
             return False
@@ -163,7 +160,6 @@ class BratSynthetic:
 
         return overlapping_tags
 
-
     def create_replacement_text_for_entities(self, entities: List[BratEntity]) -> List[Tuple[BratEntity, str]]:
         type_to_entities: Dict[str, List[str]] = defaultdict(lambda: [])
         for entity in entities:
@@ -171,21 +167,21 @@ class BratSynthetic:
 
         ret_val: List[Tuple[BratEntity, str]] = []
         for etype in type_to_entities.keys():
-            print(f'Creating {len(type_to_entities[etype])} replacements for {etype}')
             if etype not in self.entity_type_to_maker.keys():
                 for entity in type_to_entities[etype]:
                     ret_val.append((entity, entity.text))
-            elif self.simple_replacement:
-                for entity in type_to_entities[etype]:
-                    ret_val.append((entity, f'[**{etype}**]'))
             else:
-                for key, value in self.entity_type_to_maker.items():
-                    if etype.upper().startswith(key):
-                        entities = type_to_entities[etype]
+                print(f'Creating {len(type_to_entities[etype])} replacements for {etype}')
+                if self.simple_replacement:
+                    for entity in type_to_entities[etype]:
+                        ret_val.append((entity, f'[**{etype}**]'))
+                else:
+                    for key, value in self.entity_type_to_maker.items():
+                        if etype.upper().startswith(key):
+                            entities = type_to_entities[etype]
 
-                        results = value.make([entity.text for entity in entities])
-                        ret_val = list(zip(entities, results))
-
+                            results = value.make([entity.text for entity in entities])
+                            ret_val = list(zip(entities, results))
         return ret_val
 
 
