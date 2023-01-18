@@ -27,7 +27,7 @@ class BratFile:
         if os.path.exists(ann_path):
             with open(ann_path, 'r') as ann_file:
                 ann_contents = ann_file.read()
-                ann_lines = [line.strip() for line in ann_contents.splitlines()]
+                ann_lines = [line for line in ann_contents.splitlines()]
         else:
             ann_lines = []
 
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     #         print(f'Original Line: {entity.original_line}')
 
     with open(ann_path, 'r', newline='\n') as f:
-        original_ann = f.read().strip()
+        original_ann = f.read()
 
     created_ann = bratfile.to_brat_ann()
 

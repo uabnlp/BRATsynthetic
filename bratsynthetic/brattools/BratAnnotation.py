@@ -51,7 +51,7 @@ class BratTag(BratAnnotation):
 
         # Split the annotation line into components
         # Sample: T1	Protein 1881 1888;1892 1901	general confusion
-        split = ann_line.strip().split('\t')
+        split = ann_line.split('\t')
         if len(split) == 3:
             ann_type, entity_txtrange, text = ann_line.split('\t')
             tag_num = int(ann_type[1:])
