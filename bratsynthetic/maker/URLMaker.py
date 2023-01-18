@@ -7,7 +7,7 @@ class URLMaker(Maker):
 
         output = self.fake.url()
 
-        if self.show_replacements:
+        if self.config.general.show_replacements:
             print(f'    URLMaker: {input} -> {output}')
         if output.upper() == 'UNMATCHED':
             output = self.fake.url()
