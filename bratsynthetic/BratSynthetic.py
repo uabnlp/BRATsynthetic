@@ -214,7 +214,7 @@ class BratSynthetic:
                 print(f'Creating {len(type_to_entities[etype])} replacements for {etype}')
                 if self.simple_replacement:
                     for entity in type_to_entities[etype]:
-                        ret_val.append((entity, f'[**{etype}**]'))
+                        ret_val[entity] = f'[**{etype}**]'
                 else:
                     value_maker = self.entity_type_to_maker[etype]
                     entities = type_to_entities[etype]
