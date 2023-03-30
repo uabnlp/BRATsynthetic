@@ -1,0 +1,19 @@
+Test File
+
+This is a test file for brat
+  
+I hope I can figure out how brat works, with
+this test file.
+ 
+Let's see where to begin.
+m  
+How about highlight some multiline text.
+What about a blank newline?
+
+How does that work?
+
+Two blank lines?
+
+
+
+Or three?

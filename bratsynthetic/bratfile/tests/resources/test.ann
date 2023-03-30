@@ -1,0 +1,10 @@
+T1	Marry 0 9;11 18	Test File This is
+E1	Marry:T1 
+T2	Person 35 39;40 42;43 49	brat    I hope
+T3	Transfer-money 122 131;132 135;136 139	to begin. m   How
+E2	Transfer-money:T3 Giver-Arg:T6
+A1	Confidence E1 High
+A2	Negation E1
+T4	Person 161 176;177 204;206 225	multiline text. What about a blank newline? How does that work?
+T5	Organization 227 243;247 256	Two blank lines? Or three?
+T6	GPE 83 87;88 103	with this test file.

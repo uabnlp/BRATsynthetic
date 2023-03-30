@@ -1,6 +1,0 @@
-You may be asking:
-
-"Why is there a newbrattools and brattools?"
-
-The reason is convert_i2b2_to_brat.py uses the old brattools
-and have not gotten around to updating that file yet.
