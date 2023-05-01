@@ -55,8 +55,12 @@ class Maker:
         replacements: Dict[str, str] = {}
 
         for original_input in input_list:
-
-            do_transistion = random.uniform(0, 1) >= transition_probability
+            if transition_probability == 1.0:
+                do_transistion = True
+            elif transition_probability == 0.0:
+                do_transistion = False
+            else:
+                do_transistion = random.uniform(0, 1) >= transition_probability
 
             input = original_input.strip().upper()
             replacement = None
