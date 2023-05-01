@@ -1,19 +1,18 @@
 import random
-import sys
+import re
 from typing import List, Dict
 
 from faker import Faker
 
 from bratsynthetic import BratSyntheticConfig
 
-SEED = random.randint(~sys.maxsize, sys.maxsize)
-Faker.seed(SEED)
-random.seed = SEED
-
 
 class Maker:
 
     def __init__(self, config: BratSyntheticConfig):
+        SEED = config.general.seed
+        Faker.seed(SEED)
+        random.seed = SEED
         self.fake: Faker = Faker()
         self.config: BratSyntheticConfig = config
 
@@ -55,8 +54,12 @@ class Maker:
         replacements: Dict[str, str] = {}
 
         for original_input in input_list:
-
-            do_transistion = random.uniform(0, 1) < transition_probability
+            if transition_probability == 1.0:
+                do_transistion = True
+            elif transition_probability == 0.0:
+                do_transistion = False
+            else:
+                do_transistion = random.uniform(0, 1) >= transition_probability
 
             input = original_input.strip().upper()
             replacement = None
@@ -119,5 +122,6 @@ class Maker:
         elif template.isupper():
             return string.upper()
         # ELSE
-        print(f"    Unhandled match_case: {template}")
+        if re.search('[a-zA-Z]', template):
+            print(f"    Unhandled match_case: {template}")
         return string

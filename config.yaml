@@ -12,4 +12,8 @@ general:
   # only used for markov - each time a replacements a random number between 0.0 and 1.0 is generated
   # if it is above the transition probability the
   default_transition_probability: 0.5
+EmailMaker:
+  strategy: random
+AgeMaker:
+  strategy: consistent
 

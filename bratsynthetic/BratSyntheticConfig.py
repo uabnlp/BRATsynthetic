@@ -1,9 +1,20 @@
 
+import random
+import sys
 from os import path
 from typing import List
 
 import yaml
 
+
+class OverrideSettings:
+    """
+    Setting that override the general settings for a particular maker class.
+    """
+
+    def __init__(self, cls_config):
+        self.strategy = cls_config['strategy'] if 'strategy' in cls_config else None
+        self.transition_probability = cls_config['transition_probability'] if 'transition_probability' in cls_config else None
 
 class GeneralSettings:
 
@@ -17,6 +28,7 @@ class GeneralSettings:
         self.show_replacements = False
         self.default_strategy = 'simple'
         self.default_transition_probability = 0.5
+        self.seed = random.randint(~sys.maxsize, sys.maxsize)
 
         self.load_general_settings(yaml_config)
 
@@ -28,10 +40,16 @@ class GeneralSettings:
             config_general = config['general']
             self.input_dir = config_general['input_directory']
             self.output_dir = config_general['output_directory']
-            self.recursive = True if config_general['recursive'] else False
-            self.show_replacements = True if config_general['show_replacements'] else False
-            self.default_strategy = config_general['default_strategy']
-            self.default_transition_probability = config_general['default_transition_probability']
+            if 'recursive' in config_general:
+                self.recursive = config_general['recursive']
+            if 'show_replacements' in config_general:
+                self.show_replacements = config_general['show_replacements']
+            if 'default_strategy' in config_general:
+                self.default_strategy = config_general['default_strategy']
+            if 'default_transition_probability' in config_general:
+                self.default_transition_probability = config_general['default_transition_probability']
+            if 'seed' in config_general:
+                self.seed = config_general['seed']
 
     def validate(self):
 
@@ -55,6 +73,20 @@ class BratSyntheticConfig:
         with open(config_yaml_file_path, 'r') as config_yaml_file:
             config = yaml.safe_load(config_yaml_file.read())
             self.general = GeneralSettings(config)
+            self.override_settings = {}
+            for key in config.keys():
+                if key != 'general':
+                    self.override_settings[key] = OverrideSettings(config[key])
+
+    def strategy_name_for_class(self, cls) -> str:
+        cls_name = cls.__name__
+        strat = None
+        if cls_name in self.override_settings:
+            strat = self.override_settings[cls_name].strategy
+        if strat is None:
+            strat = self.general.default_strategy
+
+        return strat
 
 
 
