@@ -1,0 +1,2 @@
+#!/bin/bash
+conda activate py310cuda113
