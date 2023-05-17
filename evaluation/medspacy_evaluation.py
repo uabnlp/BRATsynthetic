@@ -1,3 +1,5 @@
+import collections
+from math import log2
 import spacy
 import scispacy
 import medspacy
@@ -11,8 +13,8 @@ model_name="en_ner_bc5cdr_md"
 nlp = spacy.load(model_name)
 print("Loaded model "+model_name)
 
-root = pathlib.Path("/data/user/ozborn/OUD/test")
-#root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6/deidentification")
+root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6_2/synthetic")
+root = pathlib.Path("/home/ozborn/code/repo/BRATsynthetic/evaluation/test")
 #root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6/deidentification/deidentification_synthetic_random/dev")
 print("Looking at files in "+str(root))
 
@@ -23,9 +25,8 @@ print("Looking at files in "+str(root))
 # data_hash key=task (token_list), value=lists of data
 # compare_hash key=file_name (b.txt), value=hash_c1
 # hash_c1 key=task (token_list), value=comparison_result (ex 0.87)
-brat_types = ['consistent','random','markov']
+brat_types = ['consist','random','markov','simple','orig']
 tests = { 'Identical Token Count':'token_list', 'Identical POS Token Count':'pos_list', 'Identical Dependency Count':'dep_list', 'Entity Count':'ent_list'}
-#allResults = dict.fromkeys(keys, {})
 allResults = {}
 print("Initialization complete, getting data....")
 
@@ -46,6 +47,32 @@ def align_tokens(doc1,doc2):
    n2perfects=sum(map(lambda x: 1 if x == 1 else 0, align.y2x.data))
    return (n1perfects+n2perfects)/2
 
+
+# May be better to switch to KL Divergence, normalize each counter value to probability distribution (0-1)
+def kl_divergence(p, q):
+ return sum(p[i] * log2(p[i]/q[i]) for i in range(len(p)))
+
+def calculate_jacard(counters):
+    #for i in range(len(counters)-2):
+    #   intersection = intersection & counters[i+2]
+
+    intersection = counters[0]+counters[1]
+    #intersection = Counter()
+    #for c in counters:
+    #   intersection &= c
+
+    union = Counter()
+    for c in counters:
+       union |= c
+
+    jacard_similarity = len(intersection) / len(union)
+
+    #print(f"Intersection: {intersection}")
+    #print(f"Union: {union}")
+    #print(f"Jaccard Similarity: {jacard_similarity}")
+    return jacard_similarity
+
+
 # Returns BRATsynthetic processing type,file name
 def getTypeFileTupe(text_file):
    path_parts = list(text_file.parts)
@@ -57,8 +84,12 @@ def getTypeFileTupe(text_file):
       brat_type='random'
    elif any("markov" in word for word in path_parts):
       brat_type='markov'
-   elif any("consistent" in word for word in path_parts):
-      brat_type='consistent'
+   elif any("consist" in word for word in path_parts):
+      brat_type='consist'
+   elif any("simple" in word for word in path_parts):
+      brat_type='simple'
+   elif any("orig" in word for word in path_parts):
+      brat_type='orig'
    else:
       print("Error:"+str(path_parts))
    #print(brat_type)
@@ -72,11 +103,11 @@ def getData(doc):
    #print(token_list)
    #pos_list = [token.pos_ for token in doc]
    dep_list = [token.dep_ for token in doc]
+   #print(dep_list)
    ent_list = [ent.text for ent in doc.ents]
    data = {}
    data['token_list']=token_list
    #data['pos_list']=pos_list
-   data['dep_list']=dep_list
    data['ent_list']=ent_list
    #for ent in doc.ents:
    #    if(ent._.is_negated):
@@ -93,6 +124,7 @@ def getData(doc):
    data['family_count']=fcount
    data['historical_count']=hcount
    data['tok_count']=tokcount
+   data['dep_list']=Counter(dep_list)
    counts = (ecount,negcount,fcount,hcount)
    return data
 
@@ -102,28 +134,6 @@ def getDocString(f):
    text_file.close()
    return data
 
-# FIX, should iterate through all files, then  rglob
-#def analyzeData():
-#   fiter = allResults[bratver].keys()
-#   first_it,second_it = tee(fiter)
-#   for bratver in allResults.keys():
-#      print("Comparing "+bratver)
-#      for file1 in first_it:
-#         for file2 in second_it:
-#            fullpath1 = allResults[bratver][file1]['fullpath']
-#            fullpath2 = allResults[bratver][file2]['fullpath']
-#            if(fullpath1==fullpath2):
-#               print("same file, no compare:"+str(fullpath1)+" to "+str(fullpath2))
-#            else:
-#               if(file1!=file2):
-#                  print("different files:"+file1+" and "+file2)
-#                  continue
-#               d1 = getDocString(fullpath1)
-#               d2 = getDocString(fullpath2)
-#               token_sim = align_tokens(d1,d2)
-#               print("Comparing "+str(file1)+str(token_sim))
-
-
 def fetchCount(bratver,fname,task):
    taskresult = allResults[fname][bratver]['data'][task]
    return ("\t"+str(taskresult),taskresult)
@@ -131,8 +141,6 @@ def fetchCount(bratver,fname,task):
 
 def appendCount(bratver,fname):
    output= str(bratver)
-   if(bratver in ['markov','random']):
-      output = output+"   "
    output = output+fetchCount(bratver,fname,"entity_count")[0]
    output = output+fetchCount(bratver,fname,"neg_count")[0]
    output = output+fetchCount(bratver,fname,"tok_count")[0]
@@ -141,20 +149,48 @@ def appendCount(bratver,fname):
    return output
 
 
+
 def printCounts():
-   print("\t\tEnts\tNegs\tTokens\tFamily\tHist")
+   totalDepJacard = dict.fromkeys(brat_types, 0.0)
+   total_files = 0
+   print("\tEnts\tNegs\tTokens\tFamily\tHist")
    for fname in allResults.keys():
       print(fname)
-      print(appendCount("markov",fname))
-      print(appendCount("random",fname))
-      print(appendCount("consistent",fname))
+      total_files += 1 
+      # File Stats
+      for t in brat_types:
+         print(appendCount(t,fname))
+      filedeps = []
+      ref = Counter(allResults[fname]['orig']['data']['dep_list'])
+      filedeps.append(ref)
+      #print("Original Counter:"+str(ref))
+      for t in brat_types:
+         c = Counter(allResults[fname][t]['data']['dep_list'])
+         #print(str(fname)+":"+str(t)+" Counter:"+str(c))
+         filedeps.append(c)
+         j = calculate_jacard(filedeps)
+         filedeps.pop()
+         #print(str(fname)+":"+str(t)+" Jacard:"+str(j))
+         # Running total of file summary stats for all BRATsynthetic types
+         totalDepJacard[t] = totalDepJacard[t] + j
+      # Any file level statistics (not needed?)
+
+   #Overall stats for all files
+   print("\nOverall Stats")
+   result_dict = {key: value / total_files for key, value in map(lambda item: (item[0], item[1] ), totalDepJacard.items())}
+   out,depout = "\t","depend jacard"
+   for j in brat_types:
+      out += "\t"+j
+      #print(str(j)+" sum dependency jacard:"+str(totalDepJacard[j]))
+      depout += "\t"+str(result_dict[j])
+   print(out)
+   print(depout)
+      
       
 
 
 
 ####### MAIN #########
-# Which you can wrap in a list() constructor to materialize
-#list(root.iterdir())
 files = root.rglob("*.txt")
 for f in files:
    tup = getTypeFileTupe(f)
@@ -170,10 +206,6 @@ for f in files:
    stats = {}
    stats['data'] = getData(doc)
    stats['fullpath']=f
-   #try:
-   #   results = fresults[tup[0]]
-   #except KeyError:
-   #   results={}
    fresults[tup[0]]=stats
 
 
