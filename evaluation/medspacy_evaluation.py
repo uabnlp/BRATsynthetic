@@ -1,22 +1,70 @@
 from distribution_metrics import counters_to_jensenshannon
 from math import log2
-import spacy
-import scispacy
-import medspacy
 import pathlib
+import glob
 import collections
+import pylcs
 from collections import Counter
+
+import spacy
+#import scispacy
+import medspacy
+#from medspacy.context import ConTextComponent
+import negspacy
+from negspacy.negation import Negex
+#from cycontext import ConTextItem, ConTextComponent
 from spacy.training import Alignment
 
-model_name = "en_ner_bc5cdr_md"
-# model_name="en_core_sci_sm"
-nlp = spacy.load(model_name)
-print("Loaded model " + model_name)
+
+## INPUT
+#model_name = "en_ner_bc5cdr_md"
+model_name="en_core_sci_sm"
+
+
+# Not loading model, MedSpacy context works with spans only
+# Snippet taken from https://github.com/medspacy/medspacy/blob/master/notebooks/14-Span-Groups.ipyn
+from medspacy.ner import TargetRule
+target_rules = [
+    TargetRule(literal="abdominal pain", category="PROBLEM"),
+    TargetRule("recurrent use in situations in which it is physically hazardous'", "RISKY_USE"),
+    TargetRule("suboxone clinic", "TREATMENT"),
+    TargetRule("methadone clinic", "TREATMENT"),
+    TargetRule("intoxication", "RISKY_USE"),
+    TargetRule("craving", "PROBLEM"),
+    TargetRule("opiate dependence", "PHARMALOGICAL_PROBLEMS"),
+    TargetRule("opioid dependence", "PHARMALOGICAL_PROBLEMS"),
+    TargetRule("addiction", "LOSS_OF_CONTROL"),
+    TargetRule("overdose", "OVERDOSE"),
+    TargetRule("opioid use", "OPIATE_USE"),
+    TargetRule("opiate use", "OPIATE_USE"),
+    TargetRule("opioid abuse", "OPIATE_USE"),
+    TargetRule("opiate abuse", "OPIATE_USE"),
+    TargetRule("heroin abuse", "OPIATE_USE"),
+    TargetRule("heroin use", "OPIATE_USE"),
+    TargetRule("use heroin", "OPIATE_USE"),
+    TargetRule("homeless", "SOCIAL_PROBLEMS"),
+    TargetRule("violence", "SOCIAL_PROBLEMS"),
+    TargetRule("withdrawal", "WITHDRAWL"),
+    TargetRule("opioid use disorder", "OUD"),
+    TargetRule("opiate use disorder", "OUD"),
+    TargetRule("OUD", "OUD"),
+    TargetRule("relapse", "RELAPSE"),
+    TargetRule("Alzheimers", "PROBLEM"),
+    TargetRule("Parkinsons", "PROBLEM"),
+    TargetRule("asthma", "PROBLEM"),
+    TargetRule("COPD", "PROBLEM"),
+]
+nlp = spacy.blank("en")
+nlp.add_pipe("medspacy_pyrush") # Not sure what this does
+matcher = nlp.add_pipe("medspacy_target_matcher", config={"result_type":"group"})
+matcher.add(target_rules)
+context = nlp.add_pipe("medspacy_context", config={"input_span_type": "group"})
+print(nlp.pipe_names)
 
 root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6_2/synthetic")
-root = pathlib.Path("/home/ozborn/code/repo/BRATsynthetic/evaluation/test")
-# root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6/deidentification/deidentification_synthetic_random/dev")
+#root = pathlib.Path("./test")
 print("Looking at files in " + str(root))
+
 
 # Global Hash, 
 # hash1 key=file name (a.txt), value=hash2
@@ -50,6 +98,10 @@ def align_tokens(doc1, doc2):
     n2perfects = sum(map(lambda x: 1 if x == 1 else 0, align.y2x.data))
     return (n1perfects + n2perfects) / 2
 
+
+def get_alignment(A,B):
+    res = pylcs.lcs_string_idx(A, B)
+    return res
 
 
 def calculate_jacard(counters):
@@ -105,22 +157,27 @@ def getData(doc):
     pos_list = [token.pos_ for token in doc]
     dep_list = [token.dep_ for token in doc]
     ent_list = [ent.text for ent in doc.ents]
+    span_list = [span.text for span in doc.spans["medspacy_spans"]]
 
     data['pos_list'] = Counter(pos_list)
     data['ent_list'] = Counter(ent_list)
     data['dep_list'] = Counter(dep_list)
     data['token_list'] = Counter(token_list)
+    data['span_list'] = Counter(span_list)
 
     ecount = sum(map(lambda x: 1, doc.ents))
-    negcount = sum(map(lambda x: 1 if x._.is_negated else 0, doc.ents))
-    fcount = sum(map(lambda x: 1 if x._.is_family else 0, doc.ents))
-    hcount = sum(map(lambda x: 1 if x._.is_historical else 0, doc.ents))
+    negcount = sum(map(lambda x: 1 if x._.is_negated else 0, doc.spans["medspacy_spans"]))
+    fcount = sum(map(lambda x: 1 if x._.is_family else 0, doc.spans["medspacy_spans"]))
+    hcount = sum(map(lambda x: 1 if x._.is_historical else 0, doc.spans["medspacy_spans"]))
+    #hcount = sum(map(lambda x: 1 if x._.is_historical else 0, doc.ents))
     tokcount = sum(map(lambda x: 1, token_list))
+    spancount = sum(map(lambda x: 1, span_list))
     data['entity_count'] = ecount
     data['neg_count'] = negcount
     data['family_count'] = fcount
     data['historical_count'] = hcount
     data['tok_count'] = tokcount
+    data['span_count'] = spancount
 
     return data
 
@@ -154,9 +211,8 @@ def printCounts():
     for task in total_task_scores.keys():
         total_task_scores[task] = dict.fromkeys(brat_types, 0.0)
 
-    print("\tEnts\tNegs\tTokens\tFamily\tHist")
+    print("\n\tEnts\tNegs\tTokens\tFamily\tHist")
     for fname in allResults.keys():
-        print(fname)
         total_files += 1
         # File Stats
         for t in brat_types:
@@ -170,7 +226,7 @@ def printCounts():
         # Any file level statistics (not needed?)
 
     # Overall stats for all files
-    print("\nOverall Stats")
+    print("\nJensen-Shannon Overall Stats")
 
     # Normalize scores
     total_result_scores = dict.fromkeys(all_tasks.keys(), {})
@@ -187,13 +243,15 @@ def printCounts():
     for task in task_row_output:
         task_row_output[task] = task
         for j in brat_types:
-            task_row_output[task] += "\t"+f'{total_result_scores[task][j]:.2f}'
+            task_row_output[task] += "\t"+f'{total_result_scores[task][j]:.3f}'
         print(task_row_output[task])
+    print(str(total_files)+" files examined")
 
 
 def compute_stats(fname, task, old_scores):
     filedeps = []
     ref = Counter(allResults[fname]['orig']['data'][task])
+    ref_string = allResults[fname]['orig']['doc_text']
     filedeps.append(ref)
     # print("Original Counter:"+str(ref))
     result_scores = dict.fromkeys(brat_types, 0)
@@ -203,6 +261,9 @@ def compute_stats(fname, task, old_scores):
         filedeps.append(c)
         #j = calculate_jacard(filedeps)
         j = counters_to_jensenshannon(filedeps[0],filedeps[1])
+        compare_string = allResults[fname][t]['doc_text']
+        align = get_alignment(ref_string,compare_string)
+        align_count = sum(map(lambda s: s!=-1, align))
         filedeps.pop()
         # Running total of file summary stats for all BRATsynthetic types
         result_scores[t] = old_scores[t] + j
@@ -210,21 +271,28 @@ def compute_stats(fname, task, old_scores):
 
 
 ####### MAIN #########
-files = root.rglob("*.txt")
+#files = root.rglob("*.txt")
+counter = 0 
+files = glob.iglob(str(root)+'/**/'+"*.txt",recursive=True)
 for f in files:
-    tup = getTypeFileTupe(f)
+    counter += 1 
+    if(counter%10 == 0):
+         print('.',end='',flush=True)
+    fpath = pathlib.Path(f)
+    tup = getTypeFileTupe(fpath)
     try:
         fresults = allResults[tup[1]]
     except KeyError:
         fresults = {}
         allResults[tup[1]] = fresults
     # Get results for this file
-    data = getDocString(f)
+    data = getDocString(fpath)
     doc = nlp(data)
 
     stats = {}
+    stats['doc_text']=data
     stats['data'] = getData(doc)
-    stats['fullpath'] = f
+    stats['fullpath'] = fpath
     fresults[tup[0]] = stats
 
 printCounts()
