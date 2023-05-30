@@ -1,29 +1,41 @@
 from distribution_metrics import counters_to_jensenshannon
 from math import log2
+import pylcs
+
 import pathlib
 import glob
 import collections
-import pylcs
+from collections import defaultdict
 from collections import Counter
+
+from tqdm import tqdm
 
 import spacy
 #import scispacy
 import medspacy
+from medspacy.ner import TargetRule
 #from medspacy.context import ConTextComponent
+#from cycontext import ConTextItem, ConTextComponent
 import negspacy
 from negspacy.negation import Negex
-#from cycontext import ConTextItem, ConTextComponent
+
 from spacy.training import Alignment
 
 
-## INPUT
+## INPUT PARAMETERS
 #model_name = "en_ner_bc5cdr_md"
 model_name="en_core_sci_sm"
+show_file_stats = True
+compute_alignment = False
 
 
-# Not loading model, MedSpacy context works with spans only
+print("Using "+model_name)
+modelnlp = spacy.load("en_core_sci_sm") 
+print(modelnlp.pipe_names)
+
+
+# Span MedSpacy context works with spans only
 # Snippet taken from https://github.com/medspacy/medspacy/blob/master/notebooks/14-Span-Groups.ipyn
-from medspacy.ner import TargetRule
 target_rules = [
     TargetRule(literal="abdominal pain", category="PROBLEM"),
     TargetRule("recurrent use in situations in which it is physically hazardous'", "RISKY_USE"),
@@ -59,10 +71,11 @@ nlp.add_pipe("medspacy_pyrush") # Not sure what this does
 matcher = nlp.add_pipe("medspacy_target_matcher", config={"result_type":"group"})
 matcher.add(target_rules)
 context = nlp.add_pipe("medspacy_context", config={"input_span_type": "group"})
+print("Rule-based OUD Model")
 print(nlp.pipe_names)
 
-root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6_2/synthetic")
-#root = pathlib.Path("./test")
+#root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6_2/synthetic")
+root = pathlib.Path("./test")
 print("Looking at files in " + str(root))
 
 
@@ -75,8 +88,16 @@ print("Looking at files in " + str(root))
 # hash_c1 key=task (token_list), value=comparison_result (ex 0.87)
 
 brat_types = ['consist', 'random', 'markov', 'simple', 'orig']
-all_tasks = {'dep_list':'Dependency', 'token_list':'Tokens', 'ent_list':'Entities', 'pos_list':'PartOfSpeech'}
+all_tasks = {'dep_list':'Dependency', 'token_list':'Tokens', 'ent_list':'Entities', 'pos_list':'PartOfSpeech', 'span_list':'Spans'}
+all_counts = {'neg_count':'Negs','family_count':'Family','historical_count':'Hist','tok_count':'Tokens','span_count':'Spans'}
 allResults = {}
+#overallResults = dict.fromkeys(brat_types, dict.fromkeys(all_counts.keys(),0))
+overallResults = defaultdict(dict)
+overallResults.update((k, {}) for k in brat_types)
+for empty in overallResults.values():
+    for task in all_counts.keys():
+        empty[task]=0
+
 print("Initialization complete, getting data....")
 
 
@@ -150,36 +171,31 @@ def getTypeFileTupe(text_file):
 
 
 # Get total entity count, entity_count, modifier_counts
-def getData(doc):
-    data = {}
+def getData(doc,data):
     token_list = [token.text for token in doc]
-    # print(token_list)
+    span_list = [span.text for span in doc.spans["medspacy_spans"]]
+    data['span_list'] = Counter(span_list)
+    data['token_list'] = Counter(token_list)
+
+    data['neg_count'] = sum(map(lambda x: 1 if x._.is_negated else 0, doc.spans["medspacy_spans"]))
+    data['family_count'] = sum(map(lambda x: 1 if x._.is_family else 0, doc.spans["medspacy_spans"]))
+    data['historical_count'] = sum(map(lambda x: 1 if x._.is_historical else 0, doc.spans["medspacy_spans"]))
+    data['tok_count'] = sum(map(lambda x: 1, token_list))
+    data['span_count'] = sum(map(lambda x: 1, span_list))
+    return data
+
+
+def add_model_data(data,doc):
+    ecount = sum(map(lambda x: 1, doc.ents))
     pos_list = [token.pos_ for token in doc]
     dep_list = [token.dep_ for token in doc]
     ent_list = [ent.text for ent in doc.ents]
-    span_list = [span.text for span in doc.spans["medspacy_spans"]]
-
     data['pos_list'] = Counter(pos_list)
-    data['ent_list'] = Counter(ent_list)
     data['dep_list'] = Counter(dep_list)
-    data['token_list'] = Counter(token_list)
-    data['span_list'] = Counter(span_list)
-
-    ecount = sum(map(lambda x: 1, doc.ents))
-    negcount = sum(map(lambda x: 1 if x._.is_negated else 0, doc.spans["medspacy_spans"]))
-    fcount = sum(map(lambda x: 1 if x._.is_family else 0, doc.spans["medspacy_spans"]))
-    hcount = sum(map(lambda x: 1 if x._.is_historical else 0, doc.spans["medspacy_spans"]))
-    #hcount = sum(map(lambda x: 1 if x._.is_historical else 0, doc.ents))
-    tokcount = sum(map(lambda x: 1, token_list))
-    spancount = sum(map(lambda x: 1, span_list))
+    data['ent_list'] = Counter(ent_list)
     data['entity_count'] = ecount
-    data['neg_count'] = negcount
-    data['family_count'] = fcount
-    data['historical_count'] = hcount
-    data['tok_count'] = tokcount
-    data['span_count'] = spancount
+    #print(data['ent_list'])
 
-    return data
 
 
 def getDocString(f):
@@ -194,44 +210,81 @@ def fetchCount(bratver, fname, task):
     return ("\t" + str(taskresult), taskresult)
 
 
-def appendCount(bratver, fname):
-    output = str(bratver)
-    output = output + fetchCount(bratver, fname, "entity_count")[0]
-    output = output + fetchCount(bratver, fname, "neg_count")[0]
-    output = output + fetchCount(bratver, fname, "tok_count")[0]
-    output = output + fetchCount(bratver, fname, "family_count")[0]
-    output = output + fetchCount(bratver, fname, "historical_count")[0]
-    return output
+def print_context_counts(d):
+    out = 'Raw Global Context Counts\n'
+    result_order = d['orig'].keys()
+    for task in result_order:
+        abbrev = all_counts[task]
+        out += "\t"+abbrev
+    for brat,task_results in d.items():
+        output = str(brat)
+        for count_type,results in task_results.items():
+            output = output+"\t"+str(results)
+        out+="\n"+output
+    print("\n"+out)
 
 
-def printCounts():
-
-    total_files = 0
-    total_task_scores = dict.fromkeys(all_tasks.keys(), {})
-    for task in total_task_scores.keys():
-        total_task_scores[task] = dict.fromkeys(brat_types, 0.0)
-
-    print("\n\tEnts\tNegs\tTokens\tFamily\tHist")
-    for fname in allResults.keys():
-        total_files += 1
-        # File Stats
+def print_file_context_counts():
+    for filecount,fname in tqdm(enumerate(allResults.keys()),desc='Computing File Stats'):
+        out = ''
+        for count_type,abbrev in all_counts.items():
+            out += "\t"+abbrev
         for t in brat_types:
-            print(appendCount(t, fname))
-        total_task_scores['dep_list'] = compute_stats(fname, 'dep_list',total_task_scores['dep_list'])
-        print(total_task_scores['dep_list'])
-        total_task_scores['ent_list'] = compute_stats(fname, 'ent_list',total_task_scores['ent_list'])
-        total_task_scores['token_list'] = compute_stats(fname, 'token_list',total_task_scores['token_list'])
-        total_task_scores['pos_list'] = compute_stats(fname, 'pos_list',total_task_scores['pos_list'])
+            output = str(t)
+            for count_type,abbrev in all_counts.items():
+                output = output + fetchCount(t, fname, count_type)[0]
+            out+="\n"+output
+        print("\n"+out)
+
+
+def compute_file_statistics():
+    task_scores = dict.fromkeys(all_tasks.keys(), {})
+    for task in task_scores.keys():
+        task_scores[task] = dict.fromkeys(brat_types, 0.0)
+
+    for filecount,fname in tqdm(enumerate(allResults.keys()),desc='Computing File Stats'):
+        # File Stats
+        task_scores['dep_list'] = compute_stats(fname, 'dep_list',task_scores['dep_list'])
+        task_scores['span_list'] = compute_stats(fname, 'span_list',task_scores['span_list'])
+        task_scores['token_list'] = compute_stats(fname, 'token_list',task_scores['token_list'])
+        task_scores['pos_list'] = compute_stats(fname, 'pos_list',task_scores['pos_list'])
         #total_dep_scores = compute_stats(fname, 'dep_list', total_dep_scores)
-        # Any file level statistics (not needed?)
+    return task_scores
 
+
+# For input filename and task, compute stats versus the original
+def compute_stats(fname, task, old_scores):
+    task_data_to_compare = []
+    ref = Counter(allResults[fname]['orig']['data'][task])
+    ref_string = allResults[fname]['orig']['doc_text']
+    task_data_to_compare.append(ref)
+    # print("Original Counter:"+str(ref))
+    result_scores = dict.fromkeys(brat_types, 0)
+    for t in brat_types:
+        c = Counter(allResults[fname][t]['data'][task])
+        task_data_to_compare.append(c)
+        #j = calculate_jacard(task_data_to_compare)
+        jen = counters_to_jensenshannon(task_data_to_compare[0],task_data_to_compare[1])
+        if(compute_alignment is True):
+            compare_string = allResults[fname][t]['doc_text']
+            align = get_alignment(ref_string,compare_string)
+            align_count = sum(map(lambda s: s!=-1, align))
+        task_data_to_compare.pop()
+        # Running total of file summary stats for all BRATsynthetic types
+        result_scores[t] = old_scores[t] + jen
+    return result_scores
+
+
+def print_overall_average_statistics(all_task_scores):
+
+    total_files = len(allResults.keys())
     # Overall stats for all files
-    print("\nJensen-Shannon Overall Stats")
+    print("\nFile Jensen-Shannon Overall Stats")
 
-    # Normalize scores
+    # Sum and Normalize scores
     total_result_scores = dict.fromkeys(all_tasks.keys(), {})
     for task in total_result_scores.keys():
-    	total_result_scores[task] = {k:v/total_files for (k,v) in total_task_scores[task].items()}
+    	total_result_scores[task] = {k:v/total_files for (k,v) in all_task_scores[task].items()}
 
     # Print Header
     out = "\t"
@@ -248,34 +301,33 @@ def printCounts():
     print(str(total_files)+" files examined")
 
 
-def compute_stats(fname, task, old_scores):
-    filedeps = []
-    ref = Counter(allResults[fname]['orig']['data'][task])
-    ref_string = allResults[fname]['orig']['doc_text']
-    filedeps.append(ref)
-    # print("Original Counter:"+str(ref))
-    result_scores = dict.fromkeys(brat_types, 0)
-    for t in brat_types:
-        c = Counter(allResults[fname][t]['data'][task])
-        #print("\n"+str(fname)+":"+str(t)+" Counter:"+str(c))
-        filedeps.append(c)
-        #j = calculate_jacard(filedeps)
-        j = counters_to_jensenshannon(filedeps[0],filedeps[1])
-        compare_string = allResults[fname][t]['doc_text']
-        align = get_alignment(ref_string,compare_string)
-        align_count = sum(map(lambda s: s!=-1, align))
-        filedeps.pop()
-        # Running total of file summary stats for all BRATsynthetic types
-        result_scores[t] = old_scores[t] + j
-    return result_scores
+# Get distribution of all POS tags, dependencies, etc...
+def get_overall_distributions(overall):
+    for filecount,fname in tqdm(enumerate(allResults.keys()),desc='Summing Counts into Distributions'):
+        for t in brat_types:
+            for tally in all_counts.keys():
+                c = allResults[fname][t]['data'][tally]
+                if(c>0):
+                    updated_result = overall[t][tally] + c
+                    overall[t][tally] = updated_result
+            #for tally in all_distributions:
+                #c = Counter(allResults[fname][t]['data'][tally])
+                #overall[t][tally] = overall[t][tally] + c
+    print_context_counts(overall)
 
+
+
+def print_all_results_ids():
+    for filecount,fname in tqdm(enumerate(allResults.keys()),desc='Printing All Results'):
+        for t in brat_types:
+            for tally in all_counts.keys():
+                c = allResults[fname][t]['data'][tally]
+                print(str(fname)+" "+t+" "+str(tally)+"  c value:"+str(c)+" allResults id:"+str(id(allResults[fname][t]['data'][tally])))
 
 ####### MAIN #########
 #files = root.rglob("*.txt")
-counter = 0 
 files = glob.iglob(str(root)+'/**/'+"*.txt",recursive=True)
-for f in files:
-    counter += 1 
+for counter,f in tqdm(enumerate(files), desc='Collecting Data'):
     if(counter%10 == 0):
          print('.',end='',flush=True)
     fpath = pathlib.Path(f)
@@ -288,14 +340,28 @@ for f in files:
     # Get results for this file
     data = getDocString(fpath)
     doc = nlp(data)
+    modeldoc = modelnlp(data)
 
     stats = {}
+    #print(str(fpath))
     stats['doc_text']=data
-    stats['data'] = getData(doc)
+    count_data = dict.fromkeys(all_counts.keys(),0)
+    task_data = dict.fromkeys(all_tasks.keys(),Counter())
+    data = count_data | task_data
+    stats['data'] = getData(doc,data)
+    add_model_data(stats['data'],modeldoc)
     stats['fullpath'] = fpath
     fresults[tup[0]] = stats
 
-printCounts()
+
+if(show_file_stats is True):
+    print_file_context_counts()
+
+tscores = compute_file_statistics()
+print_overall_average_statistics(tscores)
+# Compute Global File-Agnostic POS Tags, Dependencies, etc... from data
+overall_counts = get_overall_distributions(overallResults)
 
 # nlp = medspacy.load(enable=["sectionizer"])
+                #print(overallResults) # When consists add family value, it adds it to ALL things. May be error in allResults?
 # print(nlp.pipe_names)

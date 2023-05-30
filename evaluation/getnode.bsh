@@ -1,2 +1,3 @@
 #!/bin/bash
-srun --ntasks=1 --cpus-per-task=4 --mem-per-cpu=16386 --time=08:00:00 --partition=largemem --job-name=BRATmedspacyEval --pty /bin/bash
+srun --ntasks=1 --cpus-per-task=4 --mem-per-cpu=16386 --time=08:00:00 --partition=pascalnodes --job-name=BRATmedspacyEval --pty /bin/bash
+#srun --ntasks=1 --cpus-per-task=4 --mem-per-cpu=16386 --time=08:00:00 --partition=largemem --job-name=BRATmedspacyEval --pty /bin/bash
