@@ -13,6 +13,7 @@ from collections import Counter
 from tqdm import tqdm
 
 import spacy
+from spacy.training import Alignment
 # import scispacy
 import medspacy
 from medspacy.ner import TargetRule
@@ -21,17 +22,15 @@ from medspacy.ner import TargetRule
 # import negspacy
 # from negspacy.negation import Negex
 
-from spacy.training import Alignment
-
-## INPUT PARAMETERS
+# INPUT PARAMETERS
 # model_name = "en_ner_bc5cdr_md"
 model_name = "en_core_sci_sm"
 show_file_stats = True
 compute_alignment = False
 
 print("Using " + model_name)
-modelnlp = spacy.load("en_core_sci_sm")
-print(modelnlp.pipe_names)
+model_nlp = spacy.load("en_core_sci_sm")
+print(model_nlp.pipe_names)
 
 # Span MedSpacy context works with spans only
 # Snippet taken from https://github.com/medspacy/medspacy/blob/master/notebooks/14-Span-Groups.ipyn
@@ -77,29 +76,22 @@ print(nlp.pipe_names)
 root = pathlib.Path("./test")
 print("Looking at files in " + str(root))
 
-# Global Hash,
-# hash1 key=file name (a.txt), value=hash2
-# hash2 key=BRAT type(ex. markov), value=hash3
-# hash3 key=data_hash|compare_hash
-# data_hash key=task (token_list), value=lists of data
-# compare_hash key=file_name (b.txt), value=hash_c1
-# hash_c1 key=task (token_list), value=comparison_result (ex 0.87)
-
 brat_types = ['consist', 'random', 'markov', 'simple', 'orig']
 all_tasks = {'dep_list': 'Dependency', 'token_list': 'Tokens', 'ent_list': 'Entities', 'pos_list': 'PartOfSpeech',
              'span_list': 'Spans'}
 all_counts = {'neg_count': 'Neg', 'family_count': 'Sub', 'historical_count': 'His', 'tok_count': 'Tok',
               'span_count': 'Spans'}
+# Global Hash
 allResults = {}
 
-# Contains global results for counts
+# Contains global results for context counts distribution in all_counts
 overall_count_results = defaultdict(dict)
 overall_count_results.update((k, {}) for k in brat_types)
 for empty in overall_count_results.values():
     for task in all_counts.keys():
         empty[task] = 0
 
-# Contains global results for distributions
+# Contains global results for distributions in all_tasks
 overall_distribution_results = defaultdict(dict)
 overall_distribution_results.update((k, {}) for k in brat_types)
 for empty in overall_distribution_results.values():
@@ -231,10 +223,10 @@ def print_context_counts(d):
 
 
 def print_counters(d, name):
-    out = 'Global Counts for '+name+'\n\t'
+    out = 'Global Counts for ' + name + '\n\t'
     result_order = d['orig'][name].keys()
     for mini_task in result_order:
-        out += "\t"+mini_task
+        out += "\t" + mini_task
     for synthetic_type, counter in d.items():
         output = str(synthetic_type)
         for count_type, results in counter[name].items():
@@ -352,13 +344,14 @@ def print_all_results_ids():
 
 
 def print_global_kl_divergence(results_dictionary, distribution_name):
-    print("\nKL Divergence for Global "+distribution_name)
+    print("\nKL Divergence for Global " + distribution_name)
     for synthetic_type in brat_types:
         if synthetic_type == "orig":
             continue
         synthetic_distribution = dictionary_to_normalized_distribution(results_dictionary, synthetic_type, "orig",
                                                                        ([], []))
-        print(synthetic_type + "\t" + f'{(kl_divergence_smooth(synthetic_distribution[0], synthetic_distribution[1])):.3f}')
+        print(
+            synthetic_type + "\t" + f'{(kl_divergence_smooth(synthetic_distribution[0], synthetic_distribution[1])):.3f}')
 
 
 def make_results_dictionary_for_distribution(distribution_results, distribution_type):
@@ -385,7 +378,7 @@ for counter, f in tqdm(enumerate(files), desc='Collecting Data'):
     # Get results for this file
     data = getDocString(fpath)
     doc = nlp(data)
-    model_doc = modelnlp(data)
+    model_doc = model_nlp(data)
 
     stats = {'doc_text': data}
     # print(str(fpath))
@@ -412,4 +405,4 @@ print_global_kl_divergence(overall_counts, "context counts")
 overall_distributions = get_overall_distributions(overall_distribution_results)
 for some_task in all_tasks.keys():
     print_counters(overall_distributions, some_task)
-    print_global_kl_divergence(make_results_dictionary_for_distribution(overall_distributions,some_task),some_task)
+    print_global_kl_divergence(make_results_dictionary_for_distribution(overall_distributions, some_task), some_task)
