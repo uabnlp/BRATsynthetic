@@ -6,9 +6,15 @@ Python tool that generates realistic synthetic text for a superset of I2B2 2014 
 A poster was published in AMIA (https://knowledge.amia.org/73035-amia-1.4612663/t004-1.4613775/t004-1.4613776/3478476-1.4613879/3478476-1.4613880?qr=1) 
 and a paper is pending based on our first release [![DOI](https://zenodo.org/badge/290890218.svg)](https://zenodo.org/badge/latestdoi/290890218)
 
-
-
+## Workflow
 This tool takes annotated text from Brat (https://brat.nlplab.org) and replaces personal information with synthetic data. It will attempt to match the format of the text.
+
+BRATsynthetic is typically used in a workflow where:
+* De-identification is run using uabdeid or some other tool to generate CONLL output in IOB format
+* uabnnlptools is then run to create .ann files from the CONLL output
+* BRATsynthetic uses the directory of .ann files and the original text file to generate surrogate replaced text
+
+
 
 ## Examples of Replacements
 
