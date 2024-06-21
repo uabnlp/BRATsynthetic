@@ -24,7 +24,7 @@ class DateMaker(Maker):
         self.holidays = ['New Year\'s', 'New Year\'s Eve', 'Memorial Day', 'Independence Day', 'Labor Day',
                          'Thanksgiving', 'Christmas\.?', 'new years', 'New Years Eve', 'NYE', 'Ramadan']
 
-    def fake_date_wrapper(self, pattern: str = "%Y-%m-%d", end_datetime= None) -> str:
+    def fake_date_wrapper(self, pattern: str = "%Y-%m-%d", three_day_offset=True) -> str:
         """
         Get a date string between January 1, 1970 and now
         Uses date method from faker, by on Windows OS machines replaces %- in pattern strings with %.
@@ -34,6 +34,9 @@ class DateMaker(Maker):
         """
         if os.name == 'nt':
             pattern = pattern.replace('%-', '%')
+        if three_day_offset:
+            # set between original value and original value + 3
+            return self.fake.date_between(start_date='-3d', end_date='+3d', date_format=pattern)
         return self.fake.date(pattern)
 
     def regex_from_date_pattern(self, date_pattern: str):
