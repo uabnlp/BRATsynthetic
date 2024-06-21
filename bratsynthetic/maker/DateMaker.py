@@ -36,6 +36,7 @@ class DateMaker(Maker):
             pattern = pattern.replace('%-', '%')
         if three_day_offset:
             # set between original value and original value + 3
+            print(pattern)
             return self.fake.date_between(start_date=pattern, end_date='+3d')
         return self.fake.date(pattern)
 
