@@ -37,7 +37,7 @@ class DateMaker(Maker):
         if three_day_offset:
             # set between original value and original value + 3
             print(pattern)
-            return self.fake.date_between(start_date=pattern, end_date='+3d')
+            return self.fake.date_between(start_date='-3d', end_date='+3d').strftime(pattern)
         return self.fake.date(pattern)
 
     def regex_from_date_pattern(self, date_pattern: str):
