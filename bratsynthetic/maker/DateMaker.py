@@ -41,8 +41,9 @@ class DateMaker(Maker):
         offset = timedelta(days=3)
         fake = self.fake.date_between(start_date=actual - offset,
                                       end_date=actual + offset)
-        print(f"Input: '{input}', Actual: '{actual}', Fake: '{fake}'")
-        return fake.strftime(pattern)
+        patterned = fake.strftime(pattern)
+        print(f"Input: '{input}', Actual: '{actual}', Fake: '{fake}', 'Patterned: '{patterned}'")
+        return patterned
 
     def regex_from_date_pattern(self, date_pattern: str):
 
