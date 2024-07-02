@@ -1,6 +1,10 @@
 import random
 import re
 import os
+from datetime import timedelta
+
+import dateutil.parser
+from dateutil.parser import parse
 
 from .Maker import Maker
 from .. import BratSyntheticConfig
@@ -24,8 +28,9 @@ class DateMaker(Maker):
         self.holidays = ['New Year\'s', 'New Year\'s Eve', 'Memorial Day', 'Independence Day', 'Labor Day',
                          'Thanksgiving', 'Christmas\.?', 'new years', 'New Years Eve', 'NYE', 'Ramadan']
 
-    def fake_date_wrapper(self, pattern: str = "%Y-%m-%d", end_datetime= None) -> str:
+    def fake_date_wrapper(self, _input: str, pattern: str = "%Y-%m-%d") -> str:
         """
+        NEED TO UPDATE THIS DOCSTRING
         Get a date string between January 1, 1970 and now
         Uses date method from faker, by on Windows OS machines replaces %- in pattern strings with %.
         strftime on windows does not support %-d, %-m, %-H, ...
@@ -34,7 +39,18 @@ class DateMaker(Maker):
         """
         if os.name == 'nt':
             pattern = pattern.replace('%-', '%')
-        return self.fake.date(pattern)
+
+        try:
+            actual = parse(_input)
+        except dateutil.parser.ParserError as e:
+            print(f"Error '{e}' parsing date: {_input}. Returning '[[DATE]]' as placeholder")
+            return "[[DATE]]"
+
+        offset = timedelta(days=3)
+        fake = self.fake.date_between(start_date=actual - offset, end_date=actual + offset)
+        patterned = fake.strftime(pattern)
+        print(f"_input: '{_input}', Actual: '{actual}', Fake: '{fake}', 'Patterned: '{patterned}'")
+        return patterned
 
     def regex_from_date_pattern(self, date_pattern: str):
 
@@ -89,13 +105,13 @@ class DateMaker(Maker):
 
         return regex
 
-    def fake_date(self, pattern: str) -> str:
+    def fake_date(self, _input: str, pattern: str) -> str:
 
         pattern = pattern.replace('%.d', '%d__NUM_SUFFIX__')
         pattern = pattern.replace('%.-d', '%-d__NUM_SUFFIX__')
         pattern = pattern.replace('%>S', random.choice(self.seasons))
 
-        output = self.fake_date_wrapper(pattern)
+        output = self.fake_date_wrapper(_input, pattern)
 
         if '__NUM_SUFFIX__' in output:
             index = output.index('__NUM_SUFFIX__')
@@ -118,7 +134,7 @@ class DateMaker(Maker):
     def fake_season(self):
         return random.choice(self.seasons)
 
-    def make_one(self, input: str) -> str:
+    def make_one(self, _input: str) -> str:
         output = 'UNMATCHED'
 
         month_short_regex = '(' + '|'.join(self.months_short) + ')'
@@ -307,45 +323,45 @@ class DateMaker(Maker):
         }
 
         for key, value in dict_patterns.items():
-            if re.fullmatch(self.regex_from_date_pattern(key), input, re.IGNORECASE):
-                output = self.match_case(input, self.fake_date(value))
-            elif re.fullmatch(month_short_regex + key, input, re.IGNORECASE):
-                output = self.match_case(input, self.fake_date_wrapper(value))
-            elif re.fullmatch(month_long_regex + key, input, re.IGNORECASE):
-                output = self.match_case(input, self.fake_date_wrapper(value))
-            elif re.fullmatch(days_of_week_long_regex + key, input, re.IGNORECASE):
-                output = self.match_case(input, self.fake_date_wrapper(value))
-            elif re.fullmatch(key, input):
-                output = self.fake_date_wrapper(value)
+            if re.fullmatch(self.regex_from_date_pattern(key), _input, re.IGNORECASE):
+                output = self.match_case(_input, self.fake_date(_input, pattern=value))
+            elif re.fullmatch(month_short_regex + key, _input, re.IGNORECASE):
+                output = self.match_case(_input, self.fake_date_wrapper(_input, pattern=value))
+            elif re.fullmatch(month_long_regex + key, _input, re.IGNORECASE):
+                output = self.match_case(_input, self.fake_date_wrapper(_input, pattern=value))
+            elif re.fullmatch(days_of_week_long_regex + key, _input, re.IGNORECASE):
+                output = self.match_case(_input, self.fake_date_wrapper(_input, pattern=value))
+            elif re.fullmatch(key, _input):
+                output = self.fake_date_wrapper(_input, pattern=value)
 
 
-        if re.fullmatch(r'\d{4}', input):
-            output = self.fake_date_wrapper('%Y')
-        elif re.fullmatch(r'\d{4}-\d{4}', input):
-            begin, end = input.split('-')
+        if re.fullmatch(r'\d{4}', _input):
+            output = self.fake_date_wrapper(_input, pattern='%Y')
+        elif re.fullmatch(r'\d{4}-\d{4}', _input):
+            begin, end = _input.split('-')
             offset = int(end) - int(begin)
-            year = int(self.fake_date_wrapper('%Y'))
+            year = int(self.fake_date_wrapper(_input, pattern='%Y'))
             output = str(year) + '-' + str(year + offset)
-        elif re.fullmatch(month_long_regex + r'\.', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%B') + '.')
-        elif re.fullmatch(month_long_regex, input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%B'))
-        elif re.fullmatch(r'\d{2}-' + month_long_regex + '-\d{4}', input):
-            output = self.match_case(input, self.fake_date_wrapper('%d-%b-%Y'))
-        elif re.fullmatch(r'\d{,2}-' + month_long_regex + '-\d{4}', input):
-            output = self.match_case(input, self.fake_date_wrapper('%-d-%b-%Y'))
-        elif re.fullmatch(r'\d{2}-' + month_long_regex + '-\d{2}', input):
-            output = self.match_case(input, self.fake_date_wrapper('%d-%b-%y'))
-        elif re.fullmatch(r'\d{,2}-' + month_long_regex + '-\d{2}', input):
-            output = self.match_case(input, self.fake_date_wrapper('%-d-%b-%y'))
+        elif re.fullmatch(month_long_regex + r'\.', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%B') + '.')
+        elif re.fullmatch(month_long_regex, _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%B'))
+        elif re.fullmatch(r'\d{2}-' + month_long_regex + '-\d{4}', _input):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%d-%b-%Y'))
+        elif re.fullmatch(r'\d{,2}-' + month_long_regex + '-\d{4}', _input):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%-d-%b-%Y'))
+        elif re.fullmatch(r'\d{2}-' + month_long_regex + '-\d{2}', _input):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%d-%b-%y'))
+        elif re.fullmatch(r'\d{,2}-' + month_long_regex + '-\d{2}', _input):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%-d-%b-%y'))
         # July 23
-        elif re.fullmatch(month_long_regex + ' \d{,2}', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%B %-d'))
+        elif re.fullmatch(month_long_regex + ' \d{,2}', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%B %-d'))
         # January, 2067
-        elif re.fullmatch(month_long_regex + ', \d{4}', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%B, %Y'))
-        elif re.fullmatch(month_long_regex + r'\s+[12]?\d(st|nd|rd|th)', input, re.IGNORECASE):
-            output = self.fake_date_wrapper('%B %-d')
+        elif re.fullmatch(month_long_regex + ', \d{4}', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%B, %Y'))
+        elif re.fullmatch(month_long_regex + r'\s+[12]?\d(st|nd|rd|th)', _input, re.IGNORECASE):
+            output = self.fake_date_wrapper(_input, pattern='%B %-d')
             if output[-1] == '1':
                 output = output + 'st'
             elif output[-1] == '2':
@@ -355,35 +371,35 @@ class DateMaker(Maker):
             else:
                 output = output + 'th'
         # Oct, 2079
-        elif re.fullmatch(month_short_regex + r', \d{4}', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%b, %Y'))
-        elif re.fullmatch(month_short_regex + r'\. \d{4}\.', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%b. %Y') + '.')
-        elif re.fullmatch(month_short_regex + r'\.', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%b') + '.')
-        elif re.fullmatch(month_short_regex + r',', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%b') + ',')
-        elif re.fullmatch(r'\d{2}-' + month_short_regex + '-\d{4}', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%d-%b-%Y'))
-        elif re.fullmatch(r'\d{,2}-' + month_short_regex + '-\d{4}', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%-d-%b-%Y'))
+        elif re.fullmatch(month_short_regex + r', \d{4}', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%b, %Y'))
+        elif re.fullmatch(month_short_regex + r'\. \d{4}\.', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%b. %Y') + '.')
+        elif re.fullmatch(month_short_regex + r'\.', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%b') + '.')
+        elif re.fullmatch(month_short_regex + r',', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%b') + ',')
+        elif re.fullmatch(r'\d{2}-' + month_short_regex + '-\d{4}', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%d-%b-%Y'))
+        elif re.fullmatch(r'\d{,2}-' + month_short_regex + '-\d{4}', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%-d-%b-%Y'))
         # 01-Oct-82
-        elif re.fullmatch(r'\d{2}-' + month_short_regex + '-\d{2}', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%d-%b-%y'))
+        elif re.fullmatch(r'\d{2}-' + month_short_regex + '-\d{2}', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%d-%b-%y'))
         # 1-Oct-82
-        elif re.fullmatch(r'\d{,2}-' + month_short_regex + '-\d{2}', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%-d-%b-%y'))
+        elif re.fullmatch(r'\d{,2}-' + month_short_regex + '-\d{2}', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%-d-%b-%y'))
         # 01-Oct-2082
-        elif re.fullmatch(r'\d{2}-' + month_short_regex + '-\d{4}', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%d-%b-%Y'))
+        elif re.fullmatch(r'\d{2}-' + month_short_regex + '-\d{4}', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%d-%b-%Y'))
         # 1-Oct-2082
-        elif re.fullmatch(r'\d{,2}-' + month_short_regex + '-\d{4}', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%-d-%b-%Y'))
+        elif re.fullmatch(r'\d{,2}-' + month_short_regex + '-\d{4}', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%-d-%b-%Y'))
         # Jul 23
-        elif re.fullmatch(month_short_regex + ' \d{,2}', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%%b %-d'))
-        elif re.fullmatch(month_short_regex + r'\s+[123]?\d(st|nd|rd|th)', input, re.IGNORECASE):
-            output = self.fake_date_wrapper('%b %-d')
+        elif re.fullmatch(month_short_regex + ' \d{,2}', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%%b %-d'))
+        elif re.fullmatch(month_short_regex + r'\s+[123]?\d(st|nd|rd|th)', _input, re.IGNORECASE):
+            output = self.fake_date_wrapper(_input, pattern='%b %-d')
             if output[-1] == '1':
                 output = output + 'st'
             elif output[-1] == '2':
@@ -393,18 +409,18 @@ class DateMaker(Maker):
             else:
                 output = output + 'th'
         # 12/20/8
-        elif re.fullmatch(r'\d+/\d+/\d', input):
-            output = self.fake_date_wrapper('%m/%d/') + str(random.randint(0, 9))
-        elif re.fullmatch(r"'\d\d", input):
-            output = "'" + self.fake_date_wrapper('%y')
+        elif re.fullmatch(r'\d+/\d+/\d', _input):
+            output = self.fake_date_wrapper(_input, pattern='%m/%d/') + str(random.randint(0, 9))
+        elif re.fullmatch(r"'\d\d", _input):
+            output = "'" + self.fake_date_wrapper(_input, pattern='%y')
         # 70's
-        elif re.fullmatch(r"\d\d's", input):
+        elif re.fullmatch(r"\d\d's", _input):
             output = str(random.randint(0, 9) * 10) + "'s"
         # 2070's
-        elif re.fullmatch(r"\d{4}'s", input):
+        elif re.fullmatch(r"\d{4}'s", _input):
             output = str(random.randint(198, 209) * 10) + "'s"
-        elif re.fullmatch(r'[123]?\d(st|nd|rd|th)', input, re.IGNORECASE):
-            output = self.fake_date_wrapper('%-d')
+        elif re.fullmatch(r'[123]?\d(st|nd|rd|th)', _input, re.IGNORECASE):
+            output = self.fake_date_wrapper(_input, pattern='%-d')
             if output[-1] == '1':
                 output = output + 'st'
             elif output[-1] == '2':
@@ -414,9 +430,9 @@ class DateMaker(Maker):
             else:
                 output = output + 'th'
         # Tuesday, November 26th
-        elif re.fullmatch(days_of_week_long_regex + r', ' + month_long_regex + r' [123]?\d(st|nd|rd|th)', input,
+        elif re.fullmatch(days_of_week_long_regex + r', ' + month_long_regex + r' [123]?\d(st|nd|rd|th)', _input,
                           re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%A, %B %-d'))
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%A, %B %-d'))
             if output[-1] == '1':
                 output = output + 'st'
             elif output[-1] == '2':
@@ -426,25 +442,25 @@ class DateMaker(Maker):
             else:
                 output = output + 'th'
 
-        elif re.fullmatch(days_of_week_long_regex, input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%A'))
-        elif re.fullmatch(days_of_week_long_regex + r'\.', input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%A.'))
-        elif re.fullmatch(days_of_week_short_regex, input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_date_wrapper('%a'))
-        elif re.fullmatch('|'.join(self.holidays), input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_holiday())
+        elif re.fullmatch(days_of_week_long_regex, _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%A'))
+        elif re.fullmatch(days_of_week_long_regex + r'\.', _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%A.'))
+        elif re.fullmatch(days_of_week_short_regex, _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_date_wrapper(_input, pattern='%a'))
+        elif re.fullmatch('|'.join(self.holidays), _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_holiday())
         # M, W, F, Th, Sa
-        elif re.fullmatch(days_of_week_letter_regex, input, re.IGNORECASE):
-            output = self.match_case(input, random.choice(self.days_of_week_letter))
-        elif re.fullmatch('|'.join(self.seasons), input, re.IGNORECASE):
-            output = self.match_case(input, self.fake_season())
-        elif re.fullmatch(days_of_week_letter_regex + r'+', input, re.IGNORECASE):
-            output = self.match_case(input, random.choice(['MWF', 'TuTh', 'Sat-Sun', "M-W", "W-F"]))
-        elif re.fullmatch(r'(' + days_of_week_letter_regex + r', ?)+' + days_of_week_letter_regex, input,
+        elif re.fullmatch(days_of_week_letter_regex, _input, re.IGNORECASE):
+            output = self.match_case(_input, random.choice(self.days_of_week_letter))
+        elif re.fullmatch('|'.join(self.seasons), _input, re.IGNORECASE):
+            output = self.match_case(_input, self.fake_season())
+        elif re.fullmatch(days_of_week_letter_regex + r'+', _input, re.IGNORECASE):
+            output = self.match_case(_input, random.choice(['MWF', 'TuTh', 'Sat-Sun', "M-W", "W-F"]))
+        elif re.fullmatch(r'(' + days_of_week_letter_regex + r', ?)+' + days_of_week_letter_regex, _input,
                           re.IGNORECASE):
-            output = self.match_case(input, random.choice(['M, W, F', 'Tu, Th', 'Sat, Sun', "M, W", "W, Th, F"]))
+            output = self.match_case(_input, random.choice(['M, W, F', 'Tu, Th', 'Sat, Sun', "M, W", "W, Th, F"]))
 
         if output.upper() == 'UNMATCHED':
-            output = self.fake_date_wrapper()
+            output = self.fake_date_wrapper(_input)
         return output

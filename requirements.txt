@@ -8,3 +8,4 @@ pylcs~=0.0.8
 spacy~=3.4.4
 medspacy~=1.1.2
 tqdm~=4.65.0
+python-dateutil~=2.9.0.post0
