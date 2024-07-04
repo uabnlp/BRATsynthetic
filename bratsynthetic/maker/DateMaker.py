@@ -45,6 +45,9 @@ class DateMaker(Maker):
         except dateutil.parser.ParserError as e:
             print(f"Error '{e}' parsing date: {_input}. Returning '[[DATE]]' as placeholder")
             return "[[DATE]]"
+        except TypeError as e:
+            print(f"Subsequent error '{e}' (input='{_input}').")
+            return "[[DATE]]"
 
         offset = timedelta(days=365)
         fake = self.fake.date_between(start_date=actual - offset, end_date=actual + offset)
