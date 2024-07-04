@@ -46,7 +46,7 @@ class DateMaker(Maker):
             print(f"Error '{e}' parsing date: {_input}. Returning '[[DATE]]' as placeholder")
             return "[[DATE]]"
 
-        offset = timedelta(days=3)
+        offset = timedelta(days=365)
         fake = self.fake.date_between(start_date=actual - offset, end_date=actual + offset)
         patterned = fake.strftime(pattern)
         print(f"_input: '{_input}', Actual: '{actual}', Fake: '{fake}', 'Patterned: '{patterned}'")
