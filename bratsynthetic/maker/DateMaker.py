@@ -49,7 +49,7 @@ class DateMaker(Maker):
             print(f"Subsequent error '{e}' (input='{_input}').")
             return "[[DATE]]"
 
-        offset = timedelta(days=365)
+        offset = timedelta(days=3)
         fake = self.fake.date_between(start_date=actual - offset, end_date=actual + offset)
         patterned = fake.strftime(pattern)
         print(f"_input: '{_input}', Actual: '{actual}', Fake: '{fake}', 'Patterned: '{patterned}'")
