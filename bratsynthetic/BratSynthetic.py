@@ -91,8 +91,8 @@ class BratSynthetic:
                 print(f"[WARNING]: {current_entity} -> {replacement_text}")
                 print("[WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING]")
 
-            new_text = new_text[:current_entity.start() + offset] + replacement_text + new_text[current_entity.end() + offset:]
-            current_entity.spans = [(current_entity.start() + offset, current_entity.start() + offset + len(replacement_text))]
+            new_text = new_text[:current_entity.start() - offset] + replacement_text + new_text[current_entity.end() - offset:]
+            current_entity.spans = [(current_entity.start() - offset, current_entity.start() - offset + len(replacement_text))]
             current_entity.text = self.get_brat_text_from_spans(new_text, current_entity.spans)
             print(f'{brat_file.identifier_to_annotation[current_entity.identifier]} -> {current_entity}')
             new_brat_annotations.append(current_entity)
