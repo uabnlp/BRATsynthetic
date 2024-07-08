@@ -69,9 +69,7 @@ class BratSynthetic:
 
         new_text = brat_file.text
         new_annotations = [deepcopy(ann) for ann in brat_file.annotations]
-        new_entities: List[BratEntity] = [e for e in new_annotations if type(e) == BratEntity]
-        replacements: Dict[BratEntity, str] = self.create_replacement_text_for_entities(new_entities)
-
+        replacements: Dict[BratEntity, str] = self.create_replacement_text_for_entities(new_annotations)
 
         new_brat_annotations: List[BratEntity] = []
         for index, annotation in enumerate(new_annotations):
@@ -93,68 +91,10 @@ class BratSynthetic:
                 print("[WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING]")
 
             new_text = new_text[:current_entity.start()] + replacement_text + new_text[current_entity.end():]
-            delta_len = len(replacement_text) - (current_entity.end() - current_entity.start())
-            original_text = current_entity.text
-            # og_entity = copy(current_entity)
             current_entity.spans = [(current_entity.start(), current_entity.start() + len(replacement_text))]
             current_entity.text = self.get_brat_text_from_spans(new_text, current_entity.spans)
             print(f'{brat_file.identifier_to_annotation[current_entity.identifier]} -> {current_entity}')
-            new_annotations.append(current_entity)
-
-            if delta_len != 0:
-                # print("DELTA LEN: ", delta_len)
-                entities_to_update = list(filter(lambda e: e.end() > current_entity.start() and e != current_entity, new_entities))
-                sentinel_index = current_entity.start() + len(original_text)
-                for update_index, ent in enumerate(entities_to_update):
-                    updated_spans: List[Tuple[int, int]] = []
-                    for span in ent.spans:
-                        start, end = span
-                        start = start + delta_len if start >= sentinel_index else start
-                        end = end + delta_len if end >= sentinel_index else end
-                        updated_spans.append((start, end))
-
-                    new_ent_text = self.get_brat_text_from_spans(new_text, updated_spans)
-                    # if new_ent_text != ent.text and new_ent_text.replace(og_entity.text, current_entity.text) and ent.identifier != current_entity.identifier:
-                    #     print(f"{og_entity} -> {current_entity}")
-                    #     print(f"{ent} -> {updated_spans} {new_ent_text}")
-                    #     print("MIGHT BE AN ERROR")
-                    ent.spans = updated_spans
-                    ent.text = new_ent_text
-                    print(f'  {brat_file.identifier_to_annotation[ent.identifier]} -> {ent}')
-
-
-
-            #
-            #
-            # original_entity = replacement[0]
-            # current_text = original_entity.text
-            # replacement_text = replacement[1]
-            # if current_text == replacement_text:
-            #     new_brat_annotations.append(copy(original_entity))
-            #
-            # # assert len(original_entity.spans) == 1  # No support for non-contiguous entities.
-            # new_spans: List[Tuple[int, int]] = []
-            # if original_entity.text == replacement_text:
-            #     for og_span in original_entity.spans:
-            #         new_span = (og_span[0] + delta_span, og_span[1] + delta_span)
-            #         new_spans.append(new_span)
-            # else:
-            #     # assert len(original_entity.spans) == 1  # This
-            #     if len(original_entity.spans) > 1:
-            #         print("[WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING]")
-            #         print("[WARNING]: PHI Entity is non-contiguous. Entity will be replace with contiguous entity.")
-            #         print("[WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING]")
-            #     start_span_index = original_entity.spans[0][0] + delta_span
-            #     stop_span_index = original_entity.spans[-1][-1] + delta_span
-            #     new_text = replacement_text.join([new_text[:start_span_index], new_text[stop_span_index:]])
-            #     new_spans.append((start_span_index, start_span_index + len(replacement_text)))
-            #
-            # new_entity: BratEntity = BratEntity(original_entity.identifier, original_entity.entity_type, new_spans, replacement_text)
-            # new_brat_annotations.append(new_entity)
-            # new_brat_annotations.extend(original_entity.applied_direct_attributes)
-            # new_brat_annotations.extend(original_entity.applied_events)
-            #
-            # delta_span += (len(replacement_text) - len(current_text))
+            new_brat_annotations.append(current_entity)
 
         new_brat_file = BratFile(new_text, new_brat_annotations)
 
@@ -222,8 +162,3 @@ class BratSynthetic:
                     ret_val.update(dict(zip(entities, results)))
 
         return ret_val
-
-
-
-
-
