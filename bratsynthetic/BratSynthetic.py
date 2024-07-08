@@ -82,16 +82,6 @@ class BratSynthetic:
             current_entity: BratEntity = annotation
             replacement_text = replacements[current_entity]
             original_text = current_entity.text
-            if original_text == replacement_text:
-                print(f"WARNING: {current_entity} -> {replacement_text}")
-                new_brat_annotations.append(annotation)
-                continue
-            # else annotation in replacements with new text
-            if len(current_entity.spans) > 1:
-                print("[WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING]")
-                print("[WARNING]: PHI Entity is non-contiguous. Entity will be replace with contiguous entity.")
-                print(f"[WARNING]: {current_entity} -> {replacement_text}")
-                print("[WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING]")
 
             new_text = new_text[:current_entity.start() - offset] + replacement_text + new_text[current_entity.end() - offset:]
             current_entity.spans = [(current_entity.start() - offset, current_entity.start() - offset + len(replacement_text))]
