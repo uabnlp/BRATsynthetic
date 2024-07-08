@@ -72,6 +72,7 @@ class BratSynthetic:
         replacements: Dict[BratEntity, str] = self.create_replacement_text_for_entities(new_annotations)
 
         new_brat_annotations: List[BratEntity] = []
+        offset = 0
         for index, annotation in enumerate(new_annotations):
             if annotation not in replacements:
                 new_brat_annotations.append(annotation)
@@ -80,21 +81,15 @@ class BratSynthetic:
             assert type(annotation) == BratEntity
             current_entity: BratEntity = annotation
             replacement_text = replacements[current_entity]
-            if current_entity.text == replacement_text:
-                new_brat_annotations.append(annotation)
-                continue
-            # else annotation in replacements with new text
-            if len(current_entity.spans) > 1:
-                print("[WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING]")
-                print("[WARNING]: PHI Entity is non-contiguous. Entity will be replace with contiguous entity.")
-                print(f"[WARNING]: {current_entity} -> {replacement_text}")
-                print("[WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING][WARNING]")
+            original_text = current_entity.text
 
-            new_text = new_text[:current_entity.start()] + replacement_text + new_text[current_entity.end():]
-            current_entity.spans = [(current_entity.start(), current_entity.start() + len(replacement_text))]
+            new_text = new_text[:current_entity.start() + offset] + replacement_text + new_text[current_entity.end() + offset:]
+            current_entity.spans = [(current_entity.start() + offset, current_entity.start() + offset + len(replacement_text))]
             current_entity.text = self.get_brat_text_from_spans(new_text, current_entity.spans)
             print(f'{brat_file.identifier_to_annotation[current_entity.identifier]} -> {current_entity}')
             new_brat_annotations.append(current_entity)
+
+            offset += len(replacement_text) - len(original_text)
 
         new_brat_file = BratFile(new_text, new_brat_annotations)
 
