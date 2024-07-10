@@ -75,7 +75,8 @@ class BratSynthetic:
         offset = 0
         for index, annotation in enumerate(new_annotations):
             if annotation.text[:2] == ", ":
-                replacements[annotation] = ", " + replacements[annotation]
+                leading_text = ", " if "," not in replacements[annotation] else " "
+                replacements[annotation] = leading_text + replacements[annotation]
             if annotation not in replacements or annotation.text == ",":
                 if annotation.text == ",":
                     print(f'Skipping comma: {annotation}')
