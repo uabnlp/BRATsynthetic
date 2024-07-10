@@ -1,7 +1,7 @@
 import random
 import re
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import dateutil.parser
 from dateutil.parser import parse
@@ -28,9 +28,11 @@ class DateMaker(Maker):
         self.holidays = ['New Year\'s', 'New Year\'s Eve', 'Memorial Day', 'Independence Day', 'Labor Day',
                          'Thanksgiving', 'Christmas\.?', 'new years', 'New Years Eve', 'NYE', 'Ramadan']
 
-    def fake_date_wrapper(self, _input: str, pattern: str = "%Y-%m-%d") -> str:
+    def fake_date_wrapper(self, _input: str, pattern: str = "%Y-%m-%d", no_zero_offsets=True) -> str:
         """
-        NEED TO UPDATE THIS DOCSTRING
+        input -> parsed -> fake -> patterned
+        (str) -> (datetime) -> (datetime) -> (str)
+
         Get a date string between January 1, 1970 and now
         Uses date method from faker, by on Windows OS machines replaces %- in pattern strings with %.
         strftime on windows does not support %-d, %-m, %-H, ...
@@ -41,7 +43,7 @@ class DateMaker(Maker):
             pattern = pattern.replace('%-', '%')
 
         try:
-            actual = parse(_input)
+            parsed: datetime = parse(_input, fuzzy=True)
         except dateutil.parser.ParserError as e:
             print(f"Error '{e}' parsing date: {_input}. Returning '[[DATE]]' as placeholder")
             return "[[DATE]]"
@@ -49,10 +51,28 @@ class DateMaker(Maker):
             print(f"Subsequent error '{e}' (input='{_input}').")
             return "[[DATE]]"
 
-        offset = timedelta(days=3)
-        fake = self.fake.date_between(start_date=actual - offset, end_date=actual + offset)
-        patterned = fake.strftime(pattern)
-        print(f"_input: '{_input}', Actual: '{actual}', Fake: '{fake}', 'Patterned: '{patterned}'")
+        offsets: list[int] = [3, 31, 366]  # 3 days, at least a month, at least a year
+
+        def offset_date():
+            offset: timedelta = timedelta(days=offsets[0])
+            fake: datetime = self.fake.date_between(start_date=parsed - offset, end_date=parsed + offset)
+            patterned: str = fake.strftime(pattern)
+            return fake, patterned
+
+        fake, patterned = offset_date()
+        if no_zero_offsets:
+            while patterned == _input:
+                if fake != parsed:
+                    # the offset was nonzero but resulted in the same string, so increase the offset before trying again
+                    offsets.pop(0)
+                try:
+                    fake, patterned = offset_date()
+                except IndexError as e:
+                    # we ran out of offsets to try!
+                    print(f"Error '{e}' offsetting date: {_input}. Returning '[[DATE]]' as placeholder")
+                    return "[[DATE]]"
+
+        print(f"Input: '{_input}', Parsed: '{parsed}', Fake: '{fake}', 'Patterned: '{patterned}'")
         return patterned
 
     def regex_from_date_pattern(self, date_pattern: str):
