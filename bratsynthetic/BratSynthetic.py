@@ -74,7 +74,7 @@ class BratSynthetic:
         new_brat_annotations: List[BratEntity] = []
         offset = 0
         for index, annotation in enumerate(new_annotations):
-            if annotation not in replacements:
+            if annotation not in replacements or annotation.text == ",":
                 new_brat_annotations.append(annotation)
                 continue
             # else annotation in replacements
