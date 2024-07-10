@@ -77,7 +77,7 @@ class BratSynthetic:
             if annotation not in replacements or annotation.text == ",":
                 if annotation.text == ",":
                     print(f'Skipping comma: {annotation}')
-                    new_text = new_text[:annotation.start() + offset] + "," + new_text[annotation.end() + offset:]
+                    annotation.spans = [(annotation.start() + offset, annotation.start() + offset + 1)]
                 new_brat_annotations.append(annotation)
                 continue
             # else annotation in replacements
