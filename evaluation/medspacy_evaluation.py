@@ -72,8 +72,8 @@ context = nlp.add_pipe("medspacy_context", config={"input_span_type": "group"})
 print("Rule-based OUD Model")
 print(nlp.pipe_names)
 
-# root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6_2/synthetic")
-root = pathlib.Path("./test")
+root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6_2/synthetic")
+#root = pathlib.Path("./test")
 print("Looking at files in " + str(root))
 
 brat_types = ['consist', 'random', 'markov', 'simple', 'orig']
