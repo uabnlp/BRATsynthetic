@@ -1,3 +1,6 @@
+import gc
+import sys
+
 from distribution_metrics import counters_to_jensenshannon
 from distribution_metrics import kl_divergence
 from distribution_metrics import kl_divergence_smooth
@@ -207,7 +210,7 @@ def fetchCount(bratver, fname, task):
         taskresult = allResults[fname][bratver]['data'][task]
         return "\t" + str(taskresult), taskresult
        
-	
+
 
 def print_context_counts(d):
     out = 'Global Context Counts\n\t'
@@ -362,30 +365,54 @@ def make_results_dictionary_for_distribution(distribution_results, distribution_
         some_results[some_synthetic_type] = distribution_results[some_synthetic_type][distribution_type]
     return some_results
 
+from spacy import displacy
+
+# Customize options for rendering
+options = {
+    'compact': True,     # Compact mode for clearer display
+    'bg': '#f0f0f0',     # Background color
+    'color': 'black',    # Arrow color
+    'font': 'Arial',     # Font style
+    'distance': 150,     # Distance between tokens
+    'offset_x': 50,      # Horizontal offset
+    'offset_y': 100,      # vertical offset
+    'arrow_stroke': 2,   # Width of arrow strokes
+    'arrow_width': 8     # Size of arrow heads
+}
 
 ####### MAIN #########
 # files = root.rglob("*.txt")path = '/data/user/lmansill/homedata/bratSynth/BRATsynthetic/evaluation'
-output_path = '/data/user/lmansill/homedata/bratSynth/BRATsynthetic/evaluation/output.txt'
+output_path = '/data/user/lmansill/homedata/bratSynth/BRATsynthetic/evaluation/output1.txt'
 
-with open(output_file_path, 'w') as file:
+with open(output_path, 'w') as file:
     sys.stdout = file 
     files = glob.iglob(str(root) + '/**/' + "*.txt", recursive=True)
     for counter, f in tqdm(enumerate(files), desc='Collecting Data'):
+
         if counter % 10 == 0:
-	    print('.', end='', flush=True)
+            print('.', end='', flush=True)
         fpath = pathlib.Path(f)
         tup = get_type_file_tuple(fpath)
         try:
-	    file_results = allResults[tup[1]]
+            file_results = allResults[tup[1]]
         except KeyError:
-	    file_results = {}
-	    allResults[tup[1]] = file_results
+            file_results = {}
+            allResults[tup[1]] = file_results
     # Get results for this file
         data = getDocString(fpath)
         doc = nlp(data)
         model_doc = model_nlp(data)
 
         stats = {'doc_text': data}
+
+        html = displacy.render(doc, style='dep', options=options)
+
+        # Save the rendered HTML to a file
+        with open("dependency_tree1.html", "w") as file:
+            file.write(html)
+
+        print("Visualization saved to dependency_tree1.html")
+
     # print(str(fpath))
         count_data = dict.fromkeys(all_counts.keys(), 0)
         task_data = dict.fromkeys(all_tasks.keys(), Counter())
