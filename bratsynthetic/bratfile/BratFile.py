@@ -1,8 +1,13 @@
 import os
 import re
+import logging
 from collections import defaultdict
 from typing import List, Any, Optional, Dict, Tuple
+
 from .BratAnnotation import BratAnnotation, BratEntity, BratEvent, BratAttribute
+
+# Retrieve the global 'BratSynthetic' logger
+logger = logging.getLogger('BratSynthetic')
 
 class BratFile:
     """ Representation of Named Entity Recognition File. Contains the text and the tag for each file.
@@ -52,10 +57,11 @@ class BratFile:
         for line in ann_lines:
             try:
                 annotation = BratAnnotation.from_ann_line(line)
-                if annotation: # filter unparseable annotations
+                # filter unparseable annotations
+                if annotation:
                     annotations.append(annotation)
             except ValueError as error:
-                print(f"Ignoring line \"{line}\" in {ann_path} because {error}")
+                logger.warning(f"Ignoring line \"{line}\" in {ann_path} because {error}")
 
         brat_file = BratFile(text_contents, annotations)
         brat_file.identifier = os.path.splitext(os.path.basename(txt_path))[0]
@@ -63,7 +69,10 @@ class BratFile:
 
         return brat_file
 
-    def __init__(self, text: str = '', annotations: List[BratAnnotation] = [], identifier: Any = None, ann_path: str = None):
+    def __init__(self, text: str = '',
+                 annotations: List[BratAnnotation] = [],
+                 identifier: Any = None,
+                 ann_path: str = None):
         """Creates Basic NERFile, Text and Annotations, (Identifier can be however the user of this class wants.)"""
         self.text = text
         self.annotations = annotations
@@ -79,7 +88,6 @@ class BratFile:
         return id2ann
 
     def __build_relations_for_annotations(self):
-
         for attribute in self.attributes:
             if attribute.ann_identifier in self.identifier_to_annotation:
                 related_ann = self.identifier_to_annotation[attribute.ann_identifier]
@@ -94,15 +102,24 @@ class BratFile:
 
     @property
     def entities(self) -> List[BratEntity]:
-        return [ann for ann in self.annotations if (type(ann) == BratEntity or ann.identifier_type == BratEntity.ANN_TYPE_IDENTIFIER)]
+        return [
+            ann for ann in self.annotations
+            if (isinstance(ann, BratEntity) or ann.identifier_type == BratEntity.ANN_TYPE_IDENTIFIER)
+        ]
 
     @property
     def events(self) -> List[BratEvent]:
-        return [ann for ann in self.annotations if (type(ann) == BratEvent or ann.identifier_type == BratEvent.ANN_TYPE_IDENTIFIER)]
+        return [
+            ann for ann in self.annotations
+            if (isinstance(ann, BratEvent) or ann.identifier_type == BratEvent.ANN_TYPE_IDENTIFIER)
+        ]
 
     @property
     def attributes(self) -> List[BratAttribute]:
-        return [ann for ann in self.annotations if (type(ann) == BratAttribute or ann.identifier_type == BratAttribute.ANN_TYPE_IDENTIFIER)]
+        return [
+            ann for ann in self.annotations
+            if (isinstance(ann, BratAttribute) or ann.identifier_type == BratAttribute.ANN_TYPE_IDENTIFIER)
+        ]
 
     def replace_annotation(self, annotation_identifier: str, replacement_annotation: BratAnnotation):
         foundIndex = -1
@@ -113,16 +130,13 @@ class BratFile:
         if foundIndex != 0:
             self.annotations[foundIndex] = replacement_annotation
 
-
-    def find_duplicate_annotation_in_list(self, input_list:List['BratAnnotation']):
+    def find_duplicate_annotation_in_list(self, input_list: List['BratAnnotation']):
         ann_str_to_ann = defaultdict(list)
         for annotation in input_list:
             ann_line = annotation.to_ann_line()
-
             ann_line_without_identifier = ann_line
             if ann_line.index('\t') > 0:
                 ann_line_without_identifier = ann_line[ann_line.index('\t'):]
-
             ann_str_to_ann[ann_line_without_identifier].append(annotation)
 
         duplicate_annotations = []
@@ -136,7 +150,6 @@ class BratFile:
         for ent in self.entities:
             if ent.overlaps_span(span):
                 found_entities.append(ent)
-
         return found_entities
 
     def find_duplicate_entities(self) -> List[List['BratEntity']]:
@@ -152,8 +165,9 @@ class BratFile:
         duplicate_annotations = self.find_duplicate_annotation_in_list(self.annotations)
 
         annotations_to_remove = []
-        for annotations in duplicate_annotations:
-            annotations_to_remove += annotations[1:]
+        for ann_group in duplicate_annotations:
+            # remove all but the first in each duplicate group
+            annotations_to_remove += ann_group[1:]
 
         indices_to_remove = []
         for ann_to_remove in annotations_to_remove:
@@ -165,13 +179,11 @@ class BratFile:
         for index_to_remove in sorted(indices_to_remove, reverse=True):
             self.annotations.pop(index_to_remove)
 
-        if len(self.find_duplicate_annotation_in_list(self.annotations)) > 0:
-            print(f"FOUND {len(self.find_duplicate_annotation_in_list(self.annotations))} DUPLICATES AFTER CLEANING: ")
-            print(self.find_duplicate_annotation_in_list(self.annotations))
-            print()
-            pass
-
-        # assert 0 == len(self.find_duplicate_annotation_in_list(self.annotations)), "Removal of Duplicate Annotations was not successful."
+        # Re-check to confirm duplicates removed
+        remaining_duplicates = self.find_duplicate_annotation_in_list(self.annotations)
+        if len(remaining_duplicates) > 0:
+            logger.warning(f"FOUND {len(remaining_duplicates)} DUPLICATES AFTER CLEANING: ")
+            logger.warning(f"{remaining_duplicates}")
 
     def __str__(self) -> str:
         return f'File Identifier: {str(self.identifier)} Annotations: {len(self.annotations)}'
@@ -185,15 +197,15 @@ class BratFile:
             entity_text_lines.append(self.text[span[0]:span[1]])
         entity_text = ' '.join(entity_text_lines)
         entity_text = re.sub(r'\n+', ' ', entity_text)
-
         return entity_text
 
     def check_annotation(self, entity: BratEntity) -> bool:
         test_text = self.entity_text_from_spans(entity.spans)
         if entity.text != test_text:
-            print(f"Entity Text and test_text do not match:\n  [{entity.text}]\n  [{test_text}]")
+            logger.warning(
+                f"Entity Text and test_text do not match:\n  [{entity.text}]\n  [{test_text}]"
+            )
             return False
-        # else
         return True
 
     def check_annotations(self) -> bool:
@@ -202,38 +214,45 @@ class BratFile:
 
         annotations_good: bool = True
         for index, entity in enumerate(self.annotations):
-            if (type(entity) == BratEntity or entity.identifier_type == BratEntity.ANN_TYPE_IDENTIFIER) and not self.check_annotation(entity):
-                print(f"Error in BratFile entity at {index}: {entity}")
-                print(f"  Original Line: {entity.original_line}")
-                print(f"  TEXT: [{self.text[entity.start():entity.end()]}]")
-                annotations_good = False
+            if (isinstance(entity, BratEntity)
+                    or entity.identifier_type == BratEntity.ANN_TYPE_IDENTIFIER):
+                if not self.check_annotation(entity):
+                    logger.warning(f"Error in BratFile entity at {index}: {entity}")
+                    logger.warning(f"  Original Line: {entity.original_line}")
+                    logger.warning(
+                        f"  TEXT: [{self.text[entity.start():entity.end()]}]"
+                    )
+                    annotations_good = False
 
         return annotations_good
 
     def to_brat_ann(self) -> str:
-        """Converts file to tuple for brat with text and annotation as string."""
+        """Converts file to string of brat annotations."""
 
-        # if not self.check_annotations():
-        #     raise ValueError("Issue with annotations. Can not convert BratFile to Brat annotations format.")
-        #     return
-
+        # If there's a mismatch in annotation spans, we skip or ignore them
         if not self.check_annotations():
             annotations_to_ignore = []
             for ann in self.annotations:
-                if (type(ann) == BratEntity or ann.identifier_type == BratEntity.ANN_TYPE_IDENTIFIER) and not self.check_annotation(ann):
-                    entity_to_ignore: BratEntity = ann
-                    print(f"Ignoring in BratFile entity: {entity_to_ignore} Text [{self.text[entity_to_ignore.start():entity_to_ignore.end()]}]")
-                    annotations_to_ignore.append(entity_to_ignore)
-                    annotations_to_ignore.extend(entity_to_ignore.applied_events)
-                    annotations_to_ignore.extend(entity_to_ignore.applied_attributes)
+                if (isinstance(ann, BratEntity)
+                        or ann.identifier_type == BratEntity.ANN_TYPE_IDENTIFIER):
+                    if not self.check_annotation(ann):
+                        logger.warning(
+                            f"Ignoring in BratFile entity: {ann} "
+                            f"Text [{self.text[ann.start():ann.end()]}]"
+                        )
+                        annotations_to_ignore.append(ann)
+                        annotations_to_ignore.extend(ann.applied_events)
+                        annotations_to_ignore.extend(ann.applied_attributes)
 
-            annotations_to_use = [annotation for annotation in self.annotations if annotation not in annotations_to_ignore]
+            annotations_to_use = [
+                annotation for annotation in self.annotations
+                if annotation not in annotations_to_ignore
+            ]
             return '\n'.join([annotation.to_ann_line() for annotation in annotations_to_use])
         else:
             return '\n'.join([annotation.to_ann_line() for annotation in self.annotations])
 
     def write_to_dir(self, dir: str):
-
         if not os.path.exists(dir):
             os.makedirs(dir)
 
@@ -254,8 +273,7 @@ class BratFile:
         attribute_num = 1
         event_num = 1
         for index, entity in enumerate(all_entities):
-            entity: BratEntity = entity
-            ent_id_num_mappings.append((entity.identifier_num, index+1))
+            ent_id_num_mappings.append((entity.identifier_num, index + 1))
             entity.identifier_num = index + 1
 
             old_applied_attributes = entity.applied_attributes
@@ -276,7 +294,6 @@ class BratFile:
 
             entity.applied_annotations = new_applied_events + new_applied_attributes
 
-
         all_annotations = []
         for ent in all_entities:
             all_annotations.append(ent)
@@ -288,68 +305,57 @@ class BratFile:
         """
         Returns the line number in the associated text file that the text_index occurs on.
         """
-        assert text_index >= 0 and text_index <= len(self.text), "text index outside bounds of file"
-
+        assert 0 <= text_index <= len(self.text), "text index outside bounds of file"
         return self.text[:text_index].count('\n')
 
 
 if __name__ == '__main__':
-    """For testing development"""
-
+    """
+    Example test block; all print statements replaced with logging calls.
+    Logs will appear under whatever output/logs structure is set 
+    (assuming the logger is configured before this runs).
+    """
     txt_path = '/Users/tobiasoleary/web/nlp/uabnlpfileutils/uabnlpfileutils/brattools/samples/brat_sample/test.txt'
     ann_path = '/Users/tobiasoleary/web/nlp/uabnlpfileutils/uabnlpfileutils/brattools/samples/brat_sample/test.ann'
 
     bratfile = BratFile.load_from_file(txt_path, ann_path)
 
     entities = bratfile.entities
-
     for entity in entities:
-        print('_' * 10)
-        print(entity)
-        print(f"  Applied Events: {entity.applied_events}")
-        print(f"  Applied Attributes: {entity.applied_attributes}")
-
-        print('-' * 10)
-
-    # for annotation in bratfile.annotations:
-    #
-    #     print(annotation)
-    #
-    #     if type(annotation) == BratEntity:
-    #         tag: BratEntity = annotation
-    #         print(f'Identifier: {tag.identifier}')
-    #         print(f'Tag Type: {tag.tag_type}')
-    #         print(f'Tag Text: {tag.text}')
-    #         print(f'Original Line: {tag.original_line}')
+        logger.info('-' * 10)
+        logger.info(str(entity))
+        logger.info(f"  Applied Events: {entity.applied_events}")
+        logger.info(f"  Applied Attributes: {entity.applied_attributes}")
+        logger.info('-' * 10)
 
     with open(ann_path, 'r', newline='\n') as f:
-        original_ann = f.read().replace("\r\n", "\n") # For random
+        original_ann = f.read().replace("\r\n", "\n")
 
     created_ann = bratfile.to_brat_ann()
 
-    print("----Original Ann File----")
-    print(original_ann)
-    print("-------------------------")
+    logger.debug("----Original Ann File----")
+    logger.debug(original_ann)
+    logger.debug("-------------------------")
 
-    print("----Created Ann File----")
-    print(created_ann)
-    print("------------------------")
+    logger.debug("----Created Ann File----")
+    logger.debug(created_ann)
+    logger.debug("------------------------")
 
     original_ann_lines = original_ann.split('\n')
-    create_ann_lines = bratfile.to_brat_ann().split('\n')
+    created_ann_lines = created_ann.split('\n')
 
     success = True
     for i in range(len(original_ann_lines)):
-        if i >= len(create_ann_lines):
-            print(f"Missing Annotation Line at {i}: {original_ann_lines[i]}")
+        if i >= len(created_ann_lines):
+            logger.warning(f"Missing Annotation Line at {i}: {original_ann_lines[i]}")
             success = False
-        elif original_ann_lines[i].strip() != create_ann_lines[i].strip():
+        elif original_ann_lines[i].strip() != created_ann_lines[i].strip():
+            logger.warning("Lines not equal fail")
+            logger.warning(f'  {original_ann_lines[i]}')
+            logger.warning(f'  {created_ann_lines[i]}')
             success = False
-            print("Lines not equal fail")
-            print(f'  {original_ann_lines[i]}')
-            print(f'  {create_ann_lines[i]}')
 
     if success:
-        print("Success")
+        logger.info("Success")
     else:
-        print("Fail")
+        logger.info("Fail")
