@@ -1,11 +1,8 @@
-from bratsynthetic.maker.NameMakerBase import NameMaker
+# PatientMaker.py
 
+from .NameMakerBase import NameMaker
 
 class PatientMaker(NameMaker):
-    """
-    Subclass of NameMaker because we want the PatientMaker and DoctorMaker to be separate classes.
-    But right now they have exactly the same functionality.
-    """
-    pass
-
-
+    def __init__(self, config):
+        # Use seed_offset = 2 for PatientMaker
+        super().__init__(config, seed_offset=2)
