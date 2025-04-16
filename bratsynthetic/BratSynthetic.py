@@ -75,8 +75,13 @@ class BratSynthetic:
         text = brat_file.text
         annotations = [deepcopy(ann) for ann in brat_file.annotations]
 
-        # Collect entities to be replaced
-        entities = [ann for ann in annotations if isinstance(ann, BratEntity)]
+        PHI_TAGS = set(self.entity_type_to_maker.keys())
+
+        # Collect entities to be replaced⟶  **only PHI**
+        entities = [
+            ann for ann in annotations
+            if isinstance(ann, BratEntity) and ann.entity_type in PHI_TAGS
+    ]
 
         # Create replacements for entities, using identifiers as keys
         replacements = self.create_replacement_text_for_entities(entities)
