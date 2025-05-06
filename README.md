@@ -195,5 +195,21 @@ USERNAME
 ZIP
 ```
 
+## Installation
+There are two different `requirements.txt` files.
+
+This can be installed with the following command:
+```
+pip install -r requirements.txt
+```
+
+This installs dependencies for the bratsynthetic.py script.
+
+There are additional dependencies for [evaluation/](evaluation/).  These are in  `requirements-evaluation.txt`, which are optional.
+
+
+The environment was tested on 2025-04-21 with Python 3.12.3.  The code perhaps works back to Python 3.7/3.8???
+
+
 
 [comment]: <> (## TODO)

@@ -1,11 +1,10 @@
-Faker==13.7.0
-pyyaml==6.0
-deprecation==2.1.0
+# Python 3.7 is perhaps the earliest python version that will work with these requirements.
 
-setuptools~=61.2.0
-scipy~=1.10.1
-pylcs~=0.0.8
-spacy~=3.4.4
-medspacy~=1.1.2
-tqdm~=4.65.0
-python-dateutil~=2.9.0.post0
+Faker >= 13.7.0
+pyyaml >= 6.0, <7.0
+deprecation ~= 2.1.0
+tqdm >= 4.65.0
+python-dateutil >= 2.9.0.post0
+
+# setuptool may not strictly be needed, but is probably already installed.
+setuptools >= 61.2.0
