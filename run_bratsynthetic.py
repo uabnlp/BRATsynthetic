@@ -46,7 +46,7 @@ done
 
 # Validate input/output
 if [[ -z "$INPUT_DIR" || -z "$OUTPUT_BASE" ]]; then
-  echo "❌ Input and output directories are required."
+  echo "Error: Input and output directories are required."
   usage
 fi
 
@@ -91,7 +91,7 @@ run_method() {
   write_config_file "$strategy" "$config_file"
 
   echo ""
-  echo "▶ Running $name method..."
+  echo "Running $name method..."
   python "$PYTHON_SCRIPT" -c "$config_file"
   local status=$?
 
