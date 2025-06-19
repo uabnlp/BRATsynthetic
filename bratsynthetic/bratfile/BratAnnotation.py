@@ -152,9 +152,31 @@ class BratEntity(BratAnnotation):
                 return False
         return True
 
+    def overlaps_span(self, span: Tuple[int, int]) -> bool:
+        for tag_span in self.spans:
+            if tag_span[0] == tag_span[1] or span[0] == span[1]:
+                continue
+            if tag_span[0] < span[1] and tag_span[1] > span[0]:
+                return True
+        return False
+
+    def spans_match_exactly(self, other: 'BratEntity') -> bool:
+        a = [s for s in self.spans if s[0] != s[1]]
+        b = [s for s in other.spans    if s[0] != s[1]]
+        if len(a) != len(b):
+            return False
+        return all(x == y for x, y in zip(a, b))
+
+    def overlaps_tag(self, other: 'BratEntity') -> bool:
+        for other_span in other.spans:
+            if self.spans_match_exactly(other) or self.overlaps_span(other_span):
+                return True
+        return False
+
     @property
     def applied_events(self) -> List['BratEvent']:
-        return [ann for ann in self.applied_annotations if isinstance(ann, BratEvent) and ann.entity_identifier == self.identifier]
+        return [ann for ann in self.applied_annotations
+                if isinstance(ann, BratEvent) and ann.entity_identifier == self.identifier]
 
     @property
     def applied_attributes(self) -> List['BratAttribute']:
