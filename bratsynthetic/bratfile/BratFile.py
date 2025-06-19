@@ -53,18 +53,25 @@ class BratFile:
                     annotations.append(ann)
             except ValueError as e:
                 logger.warning(f"Ignoring invalid line in {ann_path}: {line} ({e})")
-        bf = BratFile(text, annotations)
-        bf.identifier = os.path.splitext(os.path.basename(txt_path))[0]
+        bf = BratFile(
+            text,
+            annotations,
+            identifier=os.path.splitext(os.path.basename(txt_path))[0]
+        )
         bf.ann_path = ann_path
         bf._text_md5 = md5_hash(text)
         return bf
 
+
     def __init__(self,
                  text: str = '',
-                 annotations: List[BratAnnotation] = []):
+                 annotations: List[BratAnnotation] = [],
+                 identifier: Optional[str] = None):
         # text must be normalized before init
         self.text: str = text
         self.annotations: List[BratAnnotation] = annotations.copy()
+        # document ID (basename without extension)
+        self.identifier: Optional[str] = identifier
         self.identifier_to_annotation: Dict[str, BratAnnotation] = {}
         self.__rebuild_index()
         self.__build_relations()
