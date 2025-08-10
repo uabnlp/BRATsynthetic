@@ -2,31 +2,70 @@
 from scipy.spatial import distance
 from math import log2
 from collections import Counter
+import numpy as np
 
 
-# Standard KL divergence
-def kl_divergence(p, q):
-    return sum(p[i] * log2(p[i] / q[i]) for i in range(len(p)))
+def dictionary_to_normalized_distribution(dictionary, p_name, q_name, eps=1e-12, key_order=None):
+    """
+    Turn two dicts of counts into aligned probability vectors (sum to 1).
+    Returns (p_vec, q_vec, keys).
+    """
+    p_dict = dictionary[p_name]
+    q_dict = dictionary[q_name]
+    # Use a stable, deterministic key order
+    keys = key_order or sorted(set(p_dict.keys()) | set(q_dict.keys()))
+    p = np.array([p_dict.get(k, 0.0) for k in keys], dtype=float)
+    q = np.array([q_dict.get(k, 0.0) for k in keys], dtype=float)
+    # Smoothing to avoid zeros
+    if eps:
+        p = p + eps
+        q = q + eps
+    # Global normalization (not per-coordinate)
+    p = p / p.sum()
+    q = q / q.sum()
+    return p, q, keys
 
 
-# LaPlace +1 Smoothing Divergence
-def kl_divergence_smooth(p, q):
-    return sum(p[i] * log2((p[i] + 1) / (q[i] + 1)) for i in range(len(p)))
+def report_divergences(p, q, *, base=2, print_scipy=False, eps=1e-12):
+    """
+    Print (and return) divergence metrics in a consistent way.
+    By default prints **only** JS divergence.
+    - base=2 -> bits; base=e -> nats
+    - set print_scipy=True to also print sqrt(JS) from scipy (for cross-checks)
+    Returns: {"js": <float>}
+    """
+    p = np.asarray(p, float); p = np.clip(p, eps, None); p /= p.sum()
+    q = np.asarray(q, float); q = np.clip(q, eps, None); q /= q.sum()
+    js = js_divergence(p, q, eps=eps, base=base)
+    unit = "bits" if base == 2 else "nats"
+    print(f"JS Divergence [{unit}]: {js}")
+    if print_scipy:
+        js_sqrt = distance.jensenshannon(p, q, base=base)  # sqrt(JS)
+        print(f"√JS (scipy) [{unit}]: {js_sqrt}")
+    return {"js": float(js)}
 
 
-def dictionary_to_normalized_distribution(dictionary, distribution_p_name, distribution_q_name, normalized_dist):
-    distribution_p = dictionary[distribution_p_name]
-    distribution_q = dictionary[distribution_q_name]
-    normalized_dist = distributions_to_list(distribution_p, distribution_q, normalized_dist)
-    return normalized_dist
+
+def kl_divergence_smooth(p, q, eps=1e-12):
+    """
+    KL(P||Q) with safety: clips, renormalizes, and uses natural log.
+    """
+    p = np.asarray(p, dtype=float)
+    q = np.asarray(q, dtype=float)
+    # Ensure valid distributions
+    p = np.clip(p, eps, None); p = p / p.sum()
+    q = np.clip(q, eps, None); q = q / q.sum()
+    return float(np.sum(p * np.log(p / q)))
 
 
-def distributions_to_list(distribution_p, distribution_q, distribution_lists):
-    for column in distribution_q.keys():
-        total = distribution_p[column] + distribution_q[column]
-        distribution_lists[0].append(distribution_p[column] / total)
-        distribution_lists[1].append(distribution_q[column] / total)
-    return distribution_lists
+def js_divergence(p, q, eps=1e-12, base=2):
+    p = np.asarray(p, float)
+    q = np.asarray(q, float)
+    p = np.clip(p, eps, None); p /= p.sum()
+    q = np.clip(q, eps, None); q /= q.sum()
+    m = 0.5 * (p + q)
+    log_fn = np.log2 if base == 2 else np.log  # bits or nats
+    return 0.5 * (np.sum(p * log_fn(p / m)) + np.sum(q * log_fn(q / m)))
 
 
 def norm_counter_values(k, v, tot):
@@ -65,18 +104,11 @@ def test():
     print(distribution1)
     print("Jensen-Shannon Symetric Measure")
     print(distance.jensenshannon(distribution1[0], distribution1[1]))
-    print("\nKL Divergence (with LaPlace smoothing)")
+    print("\nKL Divergence (with smoothing)")
     print(kl_divergence_smooth(distribution1[0], distribution1[1]))
+    print("\nJS Divergence")
+    print(js_divergence(distribution1[0], distribution1[1]))
+    report_divergences(distribution1[0],distribution1[1])
 
-    print("\nKL Divergence (no LaPlace smoothing)")
-    p3 = {'A': 2, 'B': 3, 'C': 4}
-    p4 = {'A': 3, 'B': 2, 'C': 1}
-    distribution2 = counter2distribution(Counter(p3), Counter(p4))
-    print(distribution2)
-    print(kl_divergence(distribution2[0], distribution2[1]))
-
-    print("\nKL Divergence2 (no LaPlace smoothing)")
-    mydict = {"foo": Counter(p3), "bar": Counter(p4)}
-    distributions = dictionary_to_normalized_distribution(mydict, "foo", "bar", ([], []))
-    print(kl_divergence(distributions[0], distributions[1]))
-
+if __name__ == "__main__":
+    test()
