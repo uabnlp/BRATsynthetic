@@ -1,8 +1,9 @@
 from distribution_metrics import counters_to_jensenshannon
-from distribution_metrics import kl_divergence
 from distribution_metrics import kl_divergence_smooth
 from distribution_metrics import dictionary_to_normalized_distribution
+from distribution_metrics import report_divergences
 import pylcs
+import numpy as np
 
 import pathlib
 import glob
@@ -65,7 +66,7 @@ oud_target_rules = [
     TargetRule("COPD", "PROBLEM"),
 ]
 nlp = spacy.blank("en")
-nlp.add_pipe("medspacy_pyrush")  # Not sure what this does
+nlp.add_pipe("medspacy_pyrush")  # Healthcare based sentence segmenter 
 matcher = nlp.add_pipe("medspacy_target_matcher", config={"result_type": "group"})
 matcher.add(oud_target_rules)
 context = nlp.add_pipe("medspacy_context", config={"input_span_type": "group"})
@@ -73,8 +74,7 @@ print("Rule-based OUD Model")
 print(nlp.pipe_names)
 
 root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6_2/synthetic")
-#root = pathlib.Path("./test")
-print("Looking at files in " + str(root))
+print("Data Set Root:" + str(root))
 
 brat_types = ['consist', 'random', 'markov', 'simple', 'orig']
 all_tasks = {'dep_list': 'Dependency', 'token_list': 'Tokens', 'ent_list': 'Entities', 'pos_list': 'PartOfSpeech',
@@ -348,10 +348,13 @@ def print_global_kl_divergence(results_dictionary, distribution_name):
     for synthetic_type in brat_types:
         if synthetic_type == "orig":
             continue
-        synthetic_distribution = dictionary_to_normalized_distribution(results_dictionary, synthetic_type, "orig",
-                                                                       ([], []))
-        print(
-            synthetic_type + "\t" + f'{(kl_divergence_smooth(synthetic_distribution[0], synthetic_distribution[1])):.3f}')
+        p, q, keys = dictionary_to_normalized_distribution(results_dictionary,
+                                                   synthetic_type, "orig", eps=1e-12)
+        print(synthetic_type, f"{kl_divergence_smooth(p, q):.6g}")
+        print("Sum p:", sum(p), "min p:", min(p))
+        print("Sum q:", sum(q), "min q:", min(q))
+        assert np.isclose(np.sum(p), 1.0)
+        assert np.isclose(np.sum(q), 1.0)
 
 
 def make_results_dictionary_for_distribution(distribution_results, distribution_type):
@@ -399,10 +402,28 @@ print(str(total_files) + " files examined, end of files stats")
 # Compute Global File-Agnostic from Counts
 overall_counts = get_overall_counts(overall_count_results)
 print_context_counts(overall_counts)
-print_global_kl_divergence(overall_counts, "context counts")
+
+
+# Compare orig vs each substitution type defined in brat_types
+context_keys = ["neg_count", "family_count", "historical_count"]
+for sub_type in [t for t in brat_types if t != "orig"]:
+    filtered_counts = {
+        k: {ck: v[ck] for ck in context_keys}
+        for k, v in overall_counts.items()
+    }
+    p_vec, q_vec, _ = dictionary_to_normalized_distribution(filtered_counts, "orig", sub_type)
+    print(f"Context counts — {sub_type}: ", end="")
+    report_divergences(p_vec, q_vec, base=2, print_scipy=False)
 
 # Compute Global File-Agnostic from tasks like POS Tags, Dependencies, etc..
 overall_distributions = get_overall_distributions(overall_distribution_results)
+
 for some_task in all_tasks.keys():
     print_counters(overall_distributions, some_task)
-    print_global_kl_divergence(make_results_dictionary_for_distribution(overall_distributions, some_task), some_task)
+    dist_dict = make_results_dictionary_for_distribution(overall_distributions, some_task)
+
+    for sub_type in [t for t in brat_types if t != "orig"]:
+        p_vec, q_vec, _ = dictionary_to_normalized_distribution(dist_dict, "orig", sub_type)
+        print(f"{some_task} — {sub_type}: ", end="")
+        report_divergences(p_vec, q_vec, base=2, print_scipy=False)
+
