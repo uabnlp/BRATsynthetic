@@ -1,0 +1,18 @@
+general:
+  # input_directory - full path
+  input_directory: /data/user/sirtrott/Bioinformatics/OsborneLab/oud_modifiers/oud_2_10/identified/merged/
+  # output_directory - full path
+  output_directory: /data/user/sirtrott/Bioinformatics/OsborneLab/oud_modifiers/oud_2_10/test/synthetic/random/
+  # recursive into sub-directories
+  recursive: True
+  # show replacements - print out replacements
+  show_replacements: True
+  # default_strategy: simple, markov, consistent, random
+  default_strategy: random
+  # only used for markov - each time a replacements a random number between 0.0 and 1.0 is generated
+  # if it is above the transition probability the
+  default_transition_probability: 0.5
+EmailMaker:
+  strategy: random
+AgeMaker:
+  strategy: consistent

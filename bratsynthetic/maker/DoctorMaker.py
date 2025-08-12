@@ -1,9 +1,8 @@
+# DoctorMaker.py
+
 from .NameMakerBase import NameMaker
 
-
 class DoctorMaker(NameMaker):
-    """
-    Subclass of NameMaker because we want the PatientMaker and DoctorMaker to be separate classes.
-    But right now they have exactly the same functionality.
-    """
-    pass
+    def __init__(self, config):
+        # Use seed_offset = 1 for DoctorMaker
+        super().__init__(config, seed_offset=1)
