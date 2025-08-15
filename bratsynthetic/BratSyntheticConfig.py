@@ -28,11 +28,11 @@ class GeneralSettings:
         self.show_replacements = False
         self.default_strategy = 'simple'
         self.default_transition_probability = 0.5
-        self.seed = random.randint(~sys.maxsize, sys.maxsize)
+        self.seed = random.randint((0, 2**32 - 1)  #Afraid of negative seeds...
 
         self.load_general_settings(yaml_config)
 
-        if not self.validate:
+        if not self.validate():
             raise ValueError("Invalid configuration:\n\t:" "\n\t".join(self.errors))
 
     def load_general_settings(self, config):

@@ -515,20 +515,13 @@ _jobs = [
 _job_vehicles = [
  'mail car', 'firetruck', 'police car', 'icecream truck'
 ]
-
 class ProfessionMaker(Maker):
+    def make_one(self, template: str) -> str:
+        base = 'work vehicle' if template in _job_vehicles else random.choice(_jobs)
+        cased = self.match_case(template, base)
 
-    def make_one(self, input: str) -> str:
-        output = 'UNMATCHED'
+        if not re.search('[A-Za-z]', template):
+            return random.choice(_jobs)
 
-        if input in _job_vehicles:
-            output = 'work vehicle'
-        else:
-            output = random.choice(_jobs)
+        return cased
 
-        output = self.match_case(input, output)
-
-        if output.upper() == 'UNMATCHED':
-            output = self.match_case(random.choice(_jobs))
-
-        return output
