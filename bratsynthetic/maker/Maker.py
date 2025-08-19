@@ -58,7 +58,7 @@ class Maker:
             elif transition_probability == 0.0:
                 do_transition = False
             else:
-                do_transition = self.random.uniform(0, 1) >= transition_probability
+                do_transition = self.random.uniform(0, 1) < transition_probability
 
             # use uppercase version as key for consistency
             input_key = original_input.strip().upper()

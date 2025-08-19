@@ -28,16 +28,16 @@ class GeneralSettings:
         self.show_replacements = False
         self.default_strategy = 'simple'
         self.default_transition_probability = 0.5
-        self.seed = random.randint((0, 2**32 - 1)  #Afraid of negative seeds...
+        self.seed = random.randint(0, 2**32 - 1)  #Afraid of negative seeds...
 
         self.load_general_settings(yaml_config)
 
         if not self.validate():
-            raise ValueError("Invalid configuration:\n\t:" "\n\t".join(self.errors))
+            raise ValueError("Invalid configuration:\n\t" "\n\t".join(self.errors))
 
     def load_general_settings(self, config):
         if config['general']:
-            config_general = config['general']
+            config_general = config.get('general', {})
             self.input_dir = config_general['input_directory']
             self.output_dir = config_general['output_directory']
             if 'recursive' in config_general:
@@ -62,6 +62,9 @@ class GeneralSettings:
         # Validate output dir
         if self.output_dir is None:
             self.errors.append('Invalid configuration: general.output_directory is missing from configuration file. Please add it.')
+        elif not path.exists(self.output_dir):
+            self.errors.append('Invalid configuration: general.output_directory does not exist. Please provide a valid directory.')
+
 
         return len(self.errors) < 1
 
