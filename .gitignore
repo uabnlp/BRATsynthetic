@@ -2,6 +2,10 @@
 
 test_files/
 
+# Generated visualization files
+evaluation/Displays/**/*.html
+*.html
+
 ## From https://github.com/github/gitignore/blob/master/Python.gitignore
 
 # Byte-compiled / optimized / DLL files
