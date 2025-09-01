@@ -1,17 +1,15 @@
 import spacy
 from spacy import displacy
-import sys
-import os
+import argparse
 from pathlib import Path
 
-nlp = spacy.load('en_core_web_lg')
+parser = argparse.ArgumentParser(description="Render dependency parse to HTML")
+parser.add_argument("file", nargs="?", default="test_files/sample.txt", help="Input text file path")
+parser.add_argument("--model", default="en_core_sci_sm", help="spaCy model to use (default: en_core_sci_sm)")
+args = parser.parse_args()
 
-# Use command line argument or default test file
-if len(sys.argv) > 1:
-    file_path = sys.argv[1]
-else:
-    # Default relative path from project root
-    file_path = "test_files/sample.txt"
+nlp = spacy.load(args.model)
+file_path = args.file
 
 with open(file_path, "r", encoding="utf-8") as f:
     text = f.read().strip()

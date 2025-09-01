@@ -1,0 +1,14 @@
+The conflict is caused by:
+    The user requested spacy==3.7.5
+
+
+    scispacy 0.5.5 depends on spacy<3.8.0 and >=3.7.0
+
+
+spacy 3.4.1 based on below
+Any version of scispacy
+
+    medspacy 1.2.0 depends on spacy<3.6 and >=3.4.1
+    en-core-sci-sm 0.5.1 depends on spacy<3.5.0 and >=3.4.1
+
+pyenv activate python3.10

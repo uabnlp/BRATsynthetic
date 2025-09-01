@@ -2,7 +2,8 @@ from distribution_metrics import counters_to_jensenshannon
 from distribution_metrics import kl_divergence_smooth
 from distribution_metrics import dictionary_to_normalized_distribution
 from distribution_metrics import report_divergences
-import pylcs
+import argparse
+import difflib
 import numpy as np
 
 import pathlib
@@ -23,15 +24,13 @@ from medspacy.ner import TargetRule
 # import negspacy
 # from negspacy.negation import Negex
 
-# INPUT PARAMETERS
+"""Command-line configurable evaluation runner."""
+
+# Defaults
 # model_name = "en_ner_bc5cdr_md"
 model_name = "en_core_sci_sm"
 show_file_stats = True
 compute_alignment = False
-
-print("Using " + model_name)
-model_nlp = spacy.load("en_core_sci_sm")
-print(model_nlp.pipe_names)
 
 # Span MedSpacy context works with spans only
 # Snippet taken from https://github.com/medspacy/medspacy/blob/master/notebooks/14-Span-Groups.ipyn
@@ -66,15 +65,39 @@ oud_target_rules = [
     TargetRule("COPD", "PROBLEM"),
 ]
 nlp = spacy.blank("en")
-nlp.add_pipe("medspacy_pyrush")  # Healthcare based sentence segmenter 
+# Prefer PyRuSH sentence segmenter if available; otherwise fallback to spaCy sentencizer
+try:
+    nlp.add_pipe("medspacy_pyrush")
+except Exception:
+    nlp.add_pipe("sentencizer")
 matcher = nlp.add_pipe("medspacy_target_matcher", config={"result_type": "group"})
 matcher.add(oud_target_rules)
 context = nlp.add_pipe("medspacy_context", config={"input_span_type": "group"})
 print("Rule-based OUD Model")
 print(nlp.pipe_names)
 
-root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6_2/synthetic")
+# CLI args
+parser = argparse.ArgumentParser(description="Evaluate BRATsynthetic corpora with medspaCy/spaCy")
+parser.add_argument(
+    "--root",
+    default="./test",
+    help="Root directory to recursively search for .txt files (default: ./test)",
+)
+parser.add_argument(
+    "--model",
+    default=model_name,
+    help="spaCy model to load for parsed pipeline (default: en_core_sci_sm)",
+)
+args = parser.parse_args()
+
+root = pathlib.Path(args.root)
 print("Data Set Root:" + str(root))
+
+# Load parsed pipeline model
+model_name = args.model
+print("Using " + model_name)
+model_nlp = spacy.load(model_name)
+print(model_nlp.pipe_names)
 
 brat_types = ['consist', 'random', 'markov', 'simple', 'orig']
 all_tasks = {'dep_list': 'Dependency', 'token_list': 'Tokens', 'ent_list': 'Entities', 'pos_list': 'PartOfSpeech',
@@ -121,8 +144,15 @@ def align_tokens(doc1, doc2):
 
 
 def get_alignment(A, B):
-    res = pylcs.lcs_string_idx(A, B)
-    return res
+    """Get alignment indices using difflib.SequenceMatcher (replaces pylcs.lcs_string_idx)"""
+    matcher = difflib.SequenceMatcher(None, A, B)
+    matches = matcher.get_matching_blocks()
+    # Return list of matching character indices similar to pylcs output
+    alignment_indices = []
+    for match in matches:
+        for i in range(match.size):
+            alignment_indices.append(match.a + i)
+    return alignment_indices
 
 
 def calculate_jacard(counters):
@@ -426,4 +456,3 @@ for some_task in all_tasks.keys():
         p_vec, q_vec, _ = dictionary_to_normalized_distribution(dist_dict, "orig", sub_type)
         print(f"{some_task} — {sub_type}: ", end="")
         report_divergences(p_vec, q_vec, base=2, print_scipy=False)
-

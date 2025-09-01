@@ -2,6 +2,7 @@
 import random
 import sys
 from os import path
+from pathlib import Path
 from typing import List
 
 import yaml
@@ -38,8 +39,9 @@ class GeneralSettings:
     def load_general_settings(self, config):
         if config['general']:
             config_general = config.get('general', {})
-            self.input_dir = config_general['input_directory']
-            self.output_dir = config_general['output_directory']
+            # Convert to absolute paths to handle relative paths properly
+            self.input_dir = str(Path(config_general['input_directory']).resolve()) if config_general['input_directory'] else None
+            self.output_dir = str(Path(config_general['output_directory']).resolve()) if config_general['output_directory'] else None
             if 'recursive' in config_general:
                 self.recursive = config_general['recursive']
             if 'show_replacements' in config_general:
@@ -56,14 +58,21 @@ class GeneralSettings:
         # Validate input_dir
         if self.input_dir is None:
             self.errors.append('Invalid configuration: general.input_directory is missing from configuration file. Please add it.')
-        elif not path.exists(self.input_dir):
-            self.errors.append('Invalid configuration: general.input_directory does not exist. Please provide a valid directory.')
+        else:
+            # Convert relative to absolute path and check if it exists
+            input_path = Path(self.input_dir)
+            if not input_path.exists():
+                self.errors.append(f'Invalid configuration: general.input_directory "{self.input_dir}" does not exist. Please provide a valid directory.')
 
-        # Validate output dir
+        # Validate output dir - create if it doesn't exist (for relative paths)
         if self.output_dir is None:
             self.errors.append('Invalid configuration: general.output_directory is missing from configuration file. Please add it.')
-        elif not path.exists(self.output_dir):
-            self.errors.append('Invalid configuration: general.output_directory does not exist. Please provide a valid directory.')
+        else:
+            try:
+                # Create output directory if it doesn't exist
+                Path(self.output_dir).mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                self.errors.append(f'Invalid configuration: Cannot create output directory {self.output_dir}: {e}')
 
 
         return len(self.errors) < 1

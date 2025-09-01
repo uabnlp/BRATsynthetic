@@ -1,0 +1,37 @@
+# Legacy evaluation environment (Python 3.10.x)
+# Compatible stack for scispaCy en_core_sci_sm (Ubuntu-friendly):
+#   - Python 3.9.x
+#   - numpy 1.23.x (avoid ABI mismatch with thinc 8.1.x)
+#   - SciPy 1.10.x
+#   - spaCy 3.4.1
+#   - scispaCy 0.5.1
+#   - medspaCy 1.2.0
+# Model install (in active venv):
+#   pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
+
+setuptools>=65.5.1
+pip>=23.0
+wheel>=0.41
+
+# Pin numeric stack first to ensure binary compatibility for spaCy/thinc
+numpy==1.23.5
+scipy==1.10.1
+spacy==3.4.1
+scispacy==0.5.1
+medspacy==1.2.0
+# Compatibility pins for spaCy 3.4.1
+pydantic==1.9.2
+typing_extensions==4.4.0
+pathy==0.10.1
+tqdm>=4.65.0
+Faker>=13.7.0
+pyyaml>=6.0,<7.0
+deprecation~=2.1.0
+python-dateutil>=2.9.0
+
+# Optional: install nmslib only if you need scispaCy's EntityLinker
+# nmslib==2.1.1
+
+# May not be needed anymore?
+pandas
+notebook

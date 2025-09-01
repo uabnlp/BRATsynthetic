@@ -196,20 +196,22 @@ ZIP
 ```
 
 ## Installation
-There are two different `requirements.txt` files.
 
-This can be installed with the following command:
-```
-pip install -r requirements.txt
-```
+Two supported environments:
+- Main (Python 3.12): spaCy 3.8 + medspaCy + PyRuSH, uses `en_core_web_lg`.
+- Legacy Evaluation (Python 3.9): spaCy 3.4.1 + scispaCy 0.5.1, uses `en_core_sci_sm`.
 
-This installs dependencies for the bratsynthetic.py script.
+Quick setup (recommended):
+- Main env (3.12):
+  - `bash scripts/setup_env_main.sh`
+  - `source .venv-main/bin/activate`
+- Legacy eval env (3.9):
+  - `bash scripts/setup_env_legacy_eval.sh`
+  - `source .venv-legacy/bin/activate`
+  - Install scispaCy model (if not provided via SCISPACY_MODEL):
+    - `pip install https://github.com/allenai/scispacy/releases/download/v0.5.1/en_core_sci_sm-0.5.1.tar.gz`
 
-There are additional dependencies for [evaluation/](evaluation/).  These are in  `requirements-evaluation.txt`, which are optional.
-
-
-The environment was tested on 2025-04-21 with Python 3.12.3.  The code perhaps works back to Python 3.7/3.8???
-
-
-
-[comment]: <> (## TODO)
+Manual setup:
+- Main: create a venv with Python 3.12, then `pip install -r requirements-main.txt` and run `python -m spacy download en_core_web_lg`.
+- Legacy: create a venv with Python 3.9, then `pip install -r requirements-eval-legacy.txt`.
+  - Then install a compatible scispaCy model tarball (e.g. `en_core_sci_sm-0.5.1`).

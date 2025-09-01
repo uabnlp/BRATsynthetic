@@ -1,14 +1,13 @@
-import gc
 import sys
 import argparse
 
 from distribution_metrics import counters_to_jensenshannon
-from distribution_metrics import kl_divergence
 from distribution_metrics import kl_divergence_smooth
 from distribution_metrics import dictionary_to_normalized_distribution
-import pylcs
+import difflib
 
 import pathlib
+from pathlib import Path
 import glob
 import collections
 from collections import defaultdict
@@ -31,10 +30,6 @@ from medspacy.ner import TargetRule
 model_name = "en_core_sci_sm"
 show_file_stats = True
 compute_alignment = False
-
-print("Using " + model_name)
-model_nlp = spacy.load("en_core_sci_sm")
-print(model_nlp.pipe_names)
 
 # Span MedSpacy context works with spans only
 # Snippet taken from https://github.com/medspacy/medspacy/blob/master/notebooks/14-Span-Groups.ipyn
@@ -69,7 +64,11 @@ oud_target_rules = [
     TargetRule("COPD", "PROBLEM"),
 ]
 nlp = spacy.blank("en")
-nlp.add_pipe("medspacy_pyrush")  # Not sure what this does
+# Prefer PyRuSH sentence segmenter if available; otherwise fallback to spaCy sentencizer
+try:
+    nlp.add_pipe("medspacy_pyrush")
+except Exception:
+    nlp.add_pipe("sentencizer")
 matcher = nlp.add_pipe("medspacy_target_matcher", config={"result_type": "group"})
 matcher.add(oud_target_rules)
 context = nlp.add_pipe("medspacy_context", config={"input_span_type": "group"})
@@ -80,10 +79,17 @@ print(nlp.pipe_names)
 parser = argparse.ArgumentParser(description='Process medical text files with medspacy')
 parser.add_argument('--input-dir', default='./test', help='Input directory containing text files')
 parser.add_argument('--output-file', default='evaluation/output.txt', help='Output file for results')
+parser.add_argument('--model', default=model_name, help='spaCy model to load (default: en_core_sci_sm)')
 args = parser.parse_args()
 
 root = pathlib.Path(args.input_dir)
 print("Looking at files in " + str(root))
+
+# Load parsed pipeline model after reading args
+model_name = args.model
+print("Using " + model_name)
+model_nlp = spacy.load(model_name)
+print(model_nlp.pipe_names)
 
 brat_types = ['consist', 'random', 'markov', 'simple', 'orig']
 all_tasks = {'dep_list': 'Dependency', 'token_list': 'Tokens', 'ent_list': 'Entities', 'pos_list': 'PartOfSpeech',
@@ -130,8 +136,15 @@ def align_tokens(doc1, doc2):
 
 
 def get_alignment(A, B):
-    res = pylcs.lcs_string_idx(A, B)
-    return res
+    """Get alignment indices using difflib.SequenceMatcher (replaces pylcs.lcs_string_idx)"""
+    matcher = difflib.SequenceMatcher(None, A, B)
+    matches = matcher.get_matching_blocks()
+    # Return list of matching character indices similar to pylcs output
+    alignment_indices = []
+    for match in matches:
+        for i in range(match.size):
+            alignment_indices.append(match.a + i)
+    return alignment_indices
 
 
 def calculate_jacard(counters):
@@ -358,10 +371,8 @@ def print_global_kl_divergence(results_dictionary, distribution_name):
     for synthetic_type in brat_types:
         if synthetic_type == "orig":
             continue
-        synthetic_distribution = dictionary_to_normalized_distribution(results_dictionary, synthetic_type, "orig",
-                                                                       ([], []))
-        print(
-            synthetic_type + "\t" + f'{(kl_divergence_smooth(synthetic_distribution[0], synthetic_distribution[1])):.3f}')
+        p, q, _ = dictionary_to_normalized_distribution(results_dictionary, synthetic_type, "orig")
+        print(synthetic_type + "\t" + f"{kl_divergence_smooth(p, q):.3f}")
 
 
 def make_results_dictionary_for_distribution(distribution_results, distribution_type):
@@ -414,7 +425,8 @@ with open(output_path, 'w') as file:
 
         stats = {'doc_text': data}
 
-        html = displacy.render(doc, style='dep', options=options)
+        # Render dependency tree using the parsed model doc (requires a parser)
+        html = displacy.render(model_doc, style='dep', options=options)
 
         # Save the rendered HTML to a file in evaluation/Displays
         html_output_dir = Path("evaluation/Displays")
@@ -451,5 +463,3 @@ with open(output_path, 'w') as file:
 '''for some_task in all_tasks.keys():
     print_counters(overall_distributions, some_task)'''
 '''print_global_kl_divergence(make_results_dictionary_for_distribution(overall_distributions, some_task), some_task)'''
-
-

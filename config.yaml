@@ -1,8 +1,8 @@
 general:
   # input_directory - full path
-  input_directory: /Users/tobiasoleary/web/servers/brat-github/data/i2b2_new
+  input_directory: temp/input
   # output_directory - full path
-  output_directory: /Users/tobiasoleary/web/servers/brat-github/data/i2b2_deid
+  output_directory: temp/output
   # recursive into sub-directories
   recursive: True
   # show replacements - print out replacements

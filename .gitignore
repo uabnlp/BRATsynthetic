@@ -2,6 +2,9 @@
 
 test_files/
 
+# The paper
+paper/
+
 # Generated visualization files
 evaluation/Displays/**/*.html
 *.html
@@ -117,6 +120,9 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv-legacy/
+.venv-main/
+*.venv/
 env/
 venv/
 ENV/
@@ -146,3 +152,9 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Generated outputs and artifacts
+temp/
+temp_output/
+evaluation/Displays/
+evaluation/*.txt

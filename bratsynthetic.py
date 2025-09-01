@@ -6,6 +6,7 @@ Output will create new .text and .ann files with synthetic replacements.
 """
 
 import argparse
+import sys
 import os
 import logging
 from tqdm import tqdm
@@ -108,8 +109,16 @@ def process_files(bratsyn, input_dir, output_dir, recursive, logger):
             finally:
                 pbar.update(1)
 
+class _ArgParser(argparse.ArgumentParser):
+    def error(self, message):
+        self.print_usage(sys.stderr)
+        print(f"error: {message}", file=sys.stderr)
+        print("Hint: specify a config file with -c/--config_file. See README for a minimal example.", file=sys.stderr)
+        sys.exit(2)
+
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = _ArgParser(description="BRATsynthetic — generate surrogate-replaced text from BRAT .ann + .txt")
     parser.add_argument('-c', '--config_file', type=str, 
                         required=True, help='Configuration file path')
     return parser.parse_args()

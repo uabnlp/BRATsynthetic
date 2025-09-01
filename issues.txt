@@ -1,0 +1,91 @@
+BRATsynthetic Paper and Code Analysis - Issues and Discrepancies
+===============================================================
+
+## CRITICAL BUGS
+
+1. **MAJOR: Inverted Markov Chain Logic (bratsynthetic/maker/Maker.py:61)**
+   - Current code: `do_transition = self.random.uniform(0, 1) >= transition_probability`
+   - Problem: Logic is backwards - higher transition probabilities cause LESS transitioning
+   - Impact: Fundamentally breaks the Markov strategy that the paper's claims are based on
+   - Fix: Change >= to < in the comparison
+
+2. **Syntax Error in Seed Generation (bratsynthetic/BratSyntheticConfig.py:31)**
+   - Current code: `self.seed = random.randint((0, 2**32 - 1)`
+   - Problem: Missing closing parenthesis causes syntax error
+   - Impact: Should prevent code from running at all
+   - Fix: Add missing closing parenthesis
+
+## PAPER vs CODE DISCREPANCIES
+
+3. **Inconsistent Strategy Implementation**
+   - Paper: Describes three distinct strategies (Consistent, Random, Markov)
+   - Code: Implements all strategies using same Markov function with different probabilities
+   - Issue: Paper doesn't explain that "Markov" is just 50% transition probability
+   - Impact: Methodology section misleading about actual implementation
+
+4. **Evaluation Metrics Mismatch**
+   - Paper: Claims to use "negative KL divergence" 
+   - Code: Actually uses JS (Jensen-Shannon) divergence (evaluation/distribution_metrics.py:39)
+   - Git history: Commit 76f76e3 mentions "broken negative KL divergence" 
+   - Issue: Paper methodology doesn't match actual evaluation code
+   - Impact: Results may not be reproducible as described
+
+5. **Configuration File Inconsistencies**
+   - All config files set `default_transition_probability: 0.5` regardless of strategy
+   - Strategy differentiation comes from strategy name, not probability value
+   - Issue: Suggests evaluation may not have used intended probability values
+   - Impact: Questions validity of comparative results between strategies
+
+## INCOMPLETE IMPLEMENTATION
+
+6. **Missing Validation Call**
+   - Git commit mentions "validate() not called"
+   - validate() method exists in BratSyntheticConfig.py but may not be invoked
+   - Impact: Invalid configurations may pass through without error
+
+7. **Always True Condition**
+   - Recent commit (76f76e3) mentions fixing "always True condition"
+   - Specific location unclear from code review
+   - Impact: Unknown logic error was present in evaluation code
+
+## PAPER QUALITY ISSUES
+
+8. **Incomplete References (paper/TODO.md)**
+   - TODO mentions 2 new papers need to be added to references
+   - Reference to "Jim's paper" needs proper citation
+   - Impact: Incomplete bibliography
+
+9. **Methodology Clarity Issues**
+   - Paper doesn't explain relationship between Markov chains and probability transitions
+   - No justification for why 0.5 was chosen as default Markov transition probability
+   - Transition probability mapping to strategies not clearly documented
+   - Impact: Difficult to reproduce or understand the methodology
+
+## RECOMMENDATIONS
+
+IMMEDIATE FIXES NEEDED:
+1. Fix inverted transition logic in Maker.py:61 (CRITICAL)
+2. Fix syntax error in BratSyntheticConfig.py:31 
+3. Ensure validate() method is properly called
+4. Update paper to accurately reflect JS divergence usage
+5. Clarify strategy implementation in paper methodology
+6. Complete reference list in paper
+
+VALIDATION NEEDED:
+- Re-run all evaluations after fixing transition logic
+- Verify results still support paper's claims
+- Update paper with corrected methodology and results if needed
+
+## FILES AFFECTED
+
+Code files requiring fixes:
+- bratsynthetic/maker/Maker.py (line 61)
+- bratsynthetic/BratSyntheticConfig.py (line 31)
+
+Paper files requiring updates:
+- paper/template.tex (methodology and results sections)
+- paper/TODO.md (complete reference list)
+
+Evaluation files to verify:
+- evaluation/distribution_metrics.py
+- All config files (*.yaml)
