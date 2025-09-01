@@ -1,11 +1,5 @@
-# Legacy evaluation environment (Python 3.10.x)
+# Legacy evaluation environment (Python 3.9.x withy en_core_sci_sm)
 # Compatible stack for scispaCy en_core_sci_sm (Ubuntu-friendly):
-#   - Python 3.9.x
-#   - numpy 1.23.x (avoid ABI mismatch with thinc 8.1.x)
-#   - SciPy 1.10.x
-#   - spaCy 3.4.1
-#   - scispaCy 0.5.1
-#   - medspaCy 1.2.0
 # Model install (in active venv):
 #   pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz
 

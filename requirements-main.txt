@@ -7,3 +7,4 @@ Faker>=13.7.0
 pyyaml>=6.0,<7.0
 deprecation~=2.1.0
 python-dateutil>=2.9.0
+# Python 3.7 is perhaps the earliest python version that will work with these requirements.
