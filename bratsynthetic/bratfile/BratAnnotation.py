@@ -1,10 +1,7 @@
-import logging
-import deprecation
-import warnings
-from collections import defaultdict
-from dataclasses import dataclass
-from typing import Optional, List, Tuple, Dict
 from copy import deepcopy
+from dataclasses import dataclass
+import logging
+from typing import Optional, List, Tuple
 
 # Retrieve the global 'BratSynthetic' logger
 logger = logging.getLogger('BratSynthetic')

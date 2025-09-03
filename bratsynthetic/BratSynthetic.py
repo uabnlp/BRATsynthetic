@@ -1,8 +1,7 @@
 from collections import defaultdict
-from typing import List, Tuple, Dict
 from copy import deepcopy
-import logging
 import re
+from typing import List, Tuple, Dict
 
 from bratsynthetic.bratfile import BratFile, BratEntity
 from .BratSyntheticConfig import BratSyntheticConfig

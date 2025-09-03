@@ -1,8 +1,7 @@
 
-import random
-import sys
 from os import path
 from pathlib import Path
+import random
 from typing import List
 
 import yaml

@@ -20,7 +20,6 @@ pathy==0.10.1
 tqdm>=4.65.0
 Faker>=13.7.0
 pyyaml>=6.0,<7.0
-deprecation~=2.1.0
 python-dateutil>=2.9.0
 
 # Optional: install nmslib only if you need scispaCy's EntityLinker
