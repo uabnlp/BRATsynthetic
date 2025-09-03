@@ -6,7 +6,6 @@ from .StreetMaker import StreetMaker
 from .ZipMaker import ZipMaker
 from .PatientMaker import PatientMaker
 from .DoctorMaker import DoctorMaker
-from .PhoneMaker import PhoneMaker
 from .StateMaker import StateMaker
 from .AgeMaker import AgeMaker
 from .PhoneMaker import PhoneMaker

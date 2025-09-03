@@ -3,7 +3,8 @@ from copy import deepcopy
 import re
 from typing import List, Tuple, Dict
 
-from bratsynthetic.bratfile import BratFile, BratEntity
+from bratsynthetic.bratfile import BratAnnotation, BratFile, BratEntity
+
 from .BratSyntheticConfig import BratSyntheticConfig
 from .maker import DateMaker, StreetMaker, HospitalMaker, ZipMaker
 from .maker import DeviceMaker, EmailMaker, FaxMaker, HealthPlanMaker
@@ -18,7 +19,7 @@ class BratSynthetic:
 
     def __init__(self, config: BratSyntheticConfig, logger):
         self.simple_replacement = config.general.default_strategy == 'simple'
-        self.config = config
+        self.config: BratSyntheticConfig = config
         self.logger = logger
         self.entity_type_to_maker = {
             'AGE': AgeMaker(config),
@@ -63,14 +64,30 @@ class BratSynthetic:
         entity_text = re.sub(r'\n+', ' ', entity_text)
         return entity_text
 
-# BratSynthetic.py
 
-    def syntheticize(self, brat_txt_path: str) -> Tuple[str, str]:
+    def syntheticize_text_path(self, brat_txt_path: str) -> Tuple[str, str]:
         """
-        Returns synthetic text and text for annotation file.
+        Creates synthetic text for a single file.
+
+        Arguments:
+            brat_txt_path - str, text path to a single .txt file
+
+        Returns synthetic text and text for annotation file, tuple (text, annotations).
         """
         brat_file = BratFile.load_from_file(brat_txt_path)
+        new_brat_file = self.syntheticize_brat_file(brat_file)
+        return new_brat_file.text, new_brat_file.to_brat_ann()
 
+
+    def syntheticize_brat_file(self, brat_file: BratFile) -> BratFile:
+        """
+        Creates synthetic text for a single file.
+
+        Arguments:
+            brat_file - BratFile object
+
+        Returns BratFile with synthetic text version.
+        """
         text = brat_file.text
         annotations = [deepcopy(ann) for ann in brat_file.annotations]
 
@@ -174,9 +191,12 @@ class BratSynthetic:
                         updated_annotations.append(ref_ann)
                     ann.annotations = updated_annotations
 
+        # add PHI notice
+        if not self.config.general.suppress_phi_notice:
+            text, annotations = self._add_phi_notice(text, annotations)
+
         # Rebuild the brat file with updated annotations
-        new_brat_file = BratFile(text, annotations)
-        return new_brat_file.text, new_brat_file.to_brat_ann()
+        return BratFile(text, annotations)
 
 
     def create_replacement_text_for_entities(self, entities: List[BratEntity]) -> Dict[str, str]:
@@ -203,3 +223,17 @@ class BratSynthetic:
                     ret_val.update(dict(zip([e.identifier for e in entities_list], results)))
 
         return ret_val
+
+    def _add_phi_notice(self, text: str, annotations: List[BratAnnotation]):
+        """Add the PHI notice to the sythecized document and adjusts the annotations span offsets."""
+
+        phi_notice = "THIS IS NOT A REAL CLINICAL DOCUMENT. SYNTHETIC NAMES AND OTHER PERSONAL IDENTIFYING INFORMATION " \
+            "(PHI) CORRESPONDING TO THE PHI OF ANY REAL PERSON IS UNINTENTIONAL\n"
+
+        notice_len = len(phi_notice)
+        text = phi_notice + text
+        for i, anno in enumerate(annotations):
+            if isinstance(anno, BratEntity):
+                annotations[i].spans = [(start+notice_len, end+notice_len) for (start, end) in anno.spans]
+
+        return text, annotations

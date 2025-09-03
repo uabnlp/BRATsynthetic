@@ -17,6 +17,20 @@ class OverrideSettings:
         self.transition_probability = cls_config['transition_probability'] if 'transition_probability' in cls_config else None
 
 class GeneralSettings:
+    """
+    This class keeps the setting for the YAML configuration file, specified by --config_file CLI option.
+
+    Here are the variables for the configuration:
+        input_directory - str, input directory of BRAT files with .txt and corresponding .ann files - Required
+        output_directory - str, output directory of BRAT files with .txt and corresponding .ann files - Required
+        default_strategy - str (default=simple), the surrogate replacement strategy.
+                            Chose between simple, markov, consistent, random.
+        default_transition_probability - float (default=0.5),  only applies to default_strategy=markov, alters the
+                            transition probability
+        seed - int (default=random integer), random seed for choosing replacement values, but can be set for reproducibility.
+        suppress_phi_notice - boolean (default=False), Default behaviour is to print PHI notices on each .TXT file,
+                            set to True to suppress generating the notices.
+    """
 
     def __init__(self, yaml_config):
         self.errors: List[str] = []
@@ -29,6 +43,7 @@ class GeneralSettings:
         self.default_strategy = 'simple'
         self.default_transition_probability = 0.5
         self.seed = random.randint(0, 2**32 - 1)  #Afraid of negative seeds...
+        self.suppress_phi_notice = False
 
         self.load_general_settings(yaml_config)
 
@@ -52,6 +67,8 @@ class GeneralSettings:
             if 'seed' in config_general:
                 self.seed = config_general['seed']
 
+            self.suppress_phi_notice = config_general.get("suppress_phi_notice", self.suppress_phi_notice)
+
     def validate(self):
 
         # Validate input_dir
@@ -72,6 +89,9 @@ class GeneralSettings:
                 Path(self.output_dir).mkdir(parents=True, exist_ok=True)
             except Exception as e:
                 self.errors.append(f'Invalid configuration: Cannot create output directory {self.output_dir}: {e}')
+
+        if not isinstance(self.suppress_phi_notice, bool):
+            raise TypeError(f"suppress_phi_notice is not a bool, instead it is a {type(self.suppress_phi_notice)}")
 
 
         return len(self.errors) < 1
