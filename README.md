@@ -212,7 +212,8 @@ Quick setup (recommended):
     - `pip install https://github.com/allenai/scispacy/releases/download/v0.5.1/en_core_sci_sm-0.5.1.tar.gz`
 
 Manual setup:
-- Main: create a venv with Python 3.12, then `pip install -r requirements-main.txt` and run `python -m spacy download en_core_web_lg`.
+- Main: create a venv with Python 3.12, then `pip install -r requirements.txt` 
+  - If you need to do the evaluation edit the `requirements.txt` to add the commented out additional dependencies and run `python -m spacy download en_core_web_lg`.
 - Legacy: create a venv with Python 3.9, then `pip install -r requirements-eval-legacy.txt`.
   - Then install a compatible scispaCy model tarball (e.g. `en_core_sci_sm-0.5.1`).
 
