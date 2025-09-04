@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import argparse
 
-from bratsynthetic.brattools import BratFile, BratTag
+from bratsynthetic.bratfile import BratFile, BratEntity
 
 from typing import List, Tuple
 
@@ -55,8 +55,8 @@ class I2B2BratConverter:
         return text, tags
 
     @classmethod
-    def _convert_i2b2_to_brat_tag(cls, i2b2_tag: I2B2Tag) -> BratTag:
-        return BratTag(identifier=None, tag_type=i2b2_tag.type, spans=[(i2b2_tag.start, i2b2_tag.end)], text=i2b2_tag.text)
+    def _convert_i2b2_to_brat_tag(cls, i2b2_tag: I2B2Tag) -> BratEntity:
+        return BratEntity(identifier=None, tag_type=i2b2_tag.type, spans=[(i2b2_tag.start, i2b2_tag.end)], text=i2b2_tag.text)
 
 
     @classmethod
