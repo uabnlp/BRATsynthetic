@@ -1,0 +1,13 @@
+setuptools>=65.5.1
+tqdm>=4.65.0
+Faker>=13.7.0
+pyyaml>=6.0,<7.0
+python-dateutil>=2.9.0
+# Python 3.7 is perhaps the earliest python version that will work with these requirements.
+
+####### Below are the additional dependencies needed to run the code in evaluation/ ########
+## These are not needed run the bratsynthetic surrogate replacement software.
+# scipy>=1.11.0
+# spacy==3.8.7
+# medspacy==1.3.1
+
