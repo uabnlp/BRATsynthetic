@@ -65,7 +65,7 @@ def setup_logging(output_dir):
     return logger
 
 
-def process_files(bratsyn, input_dir, output_dir, recursive, logger):
+def process_files(bratsyn: BratSynthetic, input_dir: str, output_dir: str, recursive: bool, logger: logging.Logger):
     """Process files with progress tracking"""
     file_pairs = []
     
@@ -94,7 +94,7 @@ def process_files(bratsyn, input_dir, output_dir, recursive, logger):
                 os.makedirs(os.path.dirname(out_txt), exist_ok=True)
                 
                 # Synthetic replacements
-                replaced_text, replaced_ann = bratsyn.syntheticize(txt_path)
+                replaced_text, replaced_ann = bratsyn.syntheticize_text_path(txt_path)
                 
                 # Write output .txt and .ann
                 with open(out_txt, 'w', encoding='utf-8') as f:

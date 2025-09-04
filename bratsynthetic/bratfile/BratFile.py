@@ -1,10 +1,9 @@
+from copy import deepcopy
+import hashlib
+import logging
 import os
 import re
-import logging
-import hashlib
-from collections import defaultdict
-from typing import List, Dict, Tuple, Optional, Any
-from copy import deepcopy
+from typing import List, Dict, Tuple, Optional
 
 from .BratAnnotation import (
     BratAnnotation, BratEntity, BratEvent, BratAttribute

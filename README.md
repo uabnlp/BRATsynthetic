@@ -215,3 +215,22 @@ Manual setup:
 - Main: create a venv with Python 3.12, then `pip install -r requirements-main.txt` and run `python -m spacy download en_core_web_lg`.
 - Legacy: create a venv with Python 3.9, then `pip install -r requirements-eval-legacy.txt`.
   - Then install a compatible scispaCy model tarball (e.g. `en_core_sci_sm-0.5.1`).
+
+
+## Notes
+
+### Disable tqdm
+
+bratsynthetic.py uses tqdm to show a progress bar.  When using this software in
+a shell script and saving the output to a log file, you may want to disable tqdm.
+Otherwise, tqdm will happily print progress bars to your log file.
+
+You will need to set the environment variable `TQDM_DISABLE=1`. There are several
+ways to do this.
+
+The simplist method is to set the environment variable for that run:
+
+```bash
+TQDM_DISABLE=1 python bratsynthetic -c config.yaml
+```
+
