@@ -218,7 +218,16 @@ Manual setup:
   - Then install a compatible scispaCy model tarball (e.g. `en_core_sci_sm-0.5.1`).
 
 
-## Notes
+## Unit Tests
+Run the unit tests:
+```shell
+$ python test.py
+```
+
+This can verify that your installation is sufficient to run `bratsynthetic.py`.
+
+This is for unit testing to make sure that any modifications to the BRATsynthetic's code performs as expected.
+
 
 ### Disable tqdm
 
@@ -229,7 +238,7 @@ Otherwise, tqdm will happily print progress bars to your log file.
 You will need to set the environment variable `TQDM_DISABLE=1`. There are several
 ways to do this.
 
-The simplist method is to set the environment variable for that run:
+The simplest method is to set the environment variable for that run:
 
 ```bash
 TQDM_DISABLE=1 python bratsynthetic -c config.yaml

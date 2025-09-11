@@ -64,6 +64,25 @@ class TestSynthecizeSimple(unittest.TestCase):
         ):
             assert phrase not in self.bf_synth.text, f"The PHI phrase '{phrase}' should not be in the synthecized text."
 
+    def test_ensure_non_phi_notes_have_the_same_text(self):
+        """Test that the non PHI annotations have not been alterred by the synthetic surrogate substitution."""
+        orig_non_phi_anno_dict = {anno.identifier:anno for anno in bf_diabetes_note.annotations if not anno.entity_type.isupper()}
+        synth_non_phi_anno = [anno for anno in self.bf_synth.annotations if not anno.entity_type.isupper()]
+
+        for new_anno in synth_non_phi_anno:
+            # This anchors the based on the BratEntity identifer
+            orig_anno = orig_non_phi_anno_dict[new_anno.identifier]
+
+            # print(f"{orig_anno.entity_type}, {new_anno.entity_type}")
+            # Did the entity type remain the same
+            assert orig_anno.entity_type == new_anno.entity_type, \
+                f"Entity type mismatch '{orig_anno.entity_type}' != '{new_anno.entity_type}'"
+
+            # print(f"{bf_diabetes_note.text[orig_anno.start():orig_anno.end()]} -- {self.bf_synth.text[new_anno.start():new_anno.end()]}")
+            # Is the text in the file the same?
+            assert bf_diabetes_note.text[orig_anno.start():orig_anno.end()] == self.bf_synth.text[new_anno.start():new_anno.end()], \
+                "Text should match, but it does not match."
+
 
 class TestAddNotice(unittest.TestCase):
     @classmethod

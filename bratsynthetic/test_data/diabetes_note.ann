@@ -1,23 +1,23 @@
-T1	PATIENT 14 31	Gretel Sweettooth
-T20	DATE 37 47	03/14/1985
-T21	IDNUM 53 62	000123456
-T2	Symptom 81 97	Increased thirst
-T4	Symptom 99 117	frequent urination
-T5	Symptom 123 130	fatigue
-T22	PATIENT 183 200	Gretel Sweettooth
-T3	AGE 206 208	40
-T6	Condition 269 282	hyperglycemia
-T7	Substance 321 327;329 335	sugarytreats
-T8	LOCATION-OTHER 478 490	Candy Forest
-T10	PATIENT 411 428	Hansel Sweettooth
-T9	Symptom 439 452	blurry vision
-T23	PATIENT 685 702	Hansel Sweettooth
-T12	LOCATION-OTHER 786 805	gingerbread cottage
-T11	Condition 1158 1182	Type 2 Diabetes Mellitus
-T13	Measurement 1056 1076	Fasting glucose: 178
-T14	Measurement 1083 1094	HbA1c: 8.2%
-T15	Measurement 1095 1127	Urinalysis: Positive for glucose
-T16	Medication 1265 1281	Metformin 500 mg
-T17	Procedure 1288 1310	Refer to endocrinology
-T18	Procedure 1313 1333	Nutrition counseling
-T19	Procedure 1336 1358	Lifestyle modification
+T1	PATIENT 253 270	Gretel Sweettooth
+T20	DATE 276 286	03/14/1985
+T21	IDNUM 292 301	000123456
+T2	Symptom 320 336	Increased thirst
+T4	Symptom 338 356	frequent urination
+T5	Symptom 362 369	fatigue
+T22	PATIENT 422 439	Gretel Sweettooth
+T3	AGE 445 447	40
+T6	Condition 508 521	hyperglycemia
+T7	Substance 560 566;568 574	sugarytreats
+T10	PATIENT 650 667	Hansel Sweettooth
+T9	Symptom 678 691	blurry vision
+T8	LOCATION-OTHER 717 729	Candy Forest
+T23	PATIENT 924 941	Hansel Sweettooth
+T12	LOCATION-OTHER 1025 1044	gingerbread cottage
+T13	Measurement 1295 1315	Fasting glucose: 178
+T14	Measurement 1322 1333	HbA1c: 8.2%
+T15	Measurement 1334 1366	Urinalysis: Positive for glucose
+T11	Condition 1397 1421	Type 2 Diabetes Mellitus
+T16	Medication 1504 1520	Metformin 500 mg
+T17	Procedure 1527 1549	Refer to endocrinology
+T18	Procedure 1552 1572	Nutrition counseling
+T19	Procedure 1575 1597	Lifestyle modification
