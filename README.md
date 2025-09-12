@@ -38,6 +38,7 @@ The output is a directory of fully deidentified .txt and .ann files with the rep
 
 (Make sure you have a virtual environment for each of these tools and that it is activated before running the commands)
 
+Examples YAML configuration files are located in the [config/](config/) directory.
 
 ## Examples of Replacements
 
@@ -219,15 +220,16 @@ Manual setup:
 
 
 ## Unit Tests
-Run the unit tests:
+The command to run the unit tests:
 ```shell
-$ python test.py
+python test.py
 ```
 
-This can verify that your installation is sufficient to run `bratsynthetic.py`.
+This can verify that the environment is sufficient to run `bratsynthetic.py`.  (Skipped tests do not that anything is wrong.)
 
 This is for unit testing to make sure that any modifications to the BRATsynthetic's code performs as expected.
 
+## Notes
 
 ### Disable tqdm
 
