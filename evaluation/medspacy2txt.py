@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import sys
 import argparse
 
@@ -9,18 +8,6 @@ import difflib
 
 import pathlib
 from pathlib import Path
-=======
-import gc
-import sys
-
-from distribution_metrics import counters_to_jensenshannon
-from distribution_metrics import kl_divergence
-from distribution_metrics import kl_divergence_smooth
-from distribution_metrics import dictionary_to_normalized_distribution
-import pylcs
-
-import pathlib
->>>>>>> Luis_err
 import glob
 import collections
 from collections import defaultdict
@@ -44,13 +31,6 @@ model_name = "en_core_sci_sm"
 show_file_stats = True
 compute_alignment = False
 
-<<<<<<< HEAD
-=======
-print("Using " + model_name)
-model_nlp = spacy.load("en_core_sci_sm")
-print(model_nlp.pipe_names)
-
->>>>>>> Luis_err
 # Span MedSpacy context works with spans only
 # Snippet taken from https://github.com/medspacy/medspacy/blob/master/notebooks/14-Span-Groups.ipyn
 oud_target_rules = [
@@ -84,22 +64,17 @@ oud_target_rules = [
     TargetRule("COPD", "PROBLEM"),
 ]
 nlp = spacy.blank("en")
-<<<<<<< HEAD
 # Prefer PyRuSH sentence segmenter if available; otherwise fallback to spaCy sentencizer
 try:
     nlp.add_pipe("medspacy_pyrush")
 except Exception:
     nlp.add_pipe("sentencizer")
-=======
-nlp.add_pipe("medspacy_pyrush")  # Not sure what this does
->>>>>>> Luis_err
 matcher = nlp.add_pipe("medspacy_target_matcher", config={"result_type": "group"})
 matcher.add(oud_target_rules)
 context = nlp.add_pipe("medspacy_context", config={"input_span_type": "group"})
 print("Rule-based OUD Model")
 print(nlp.pipe_names)
 
-<<<<<<< HEAD
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='Process medical text files with medspacy')
 parser.add_argument('--input-dir', default='./test', help='Input directory containing text files')
@@ -116,12 +91,6 @@ print("Using " + model_name)
 model_nlp = spacy.load(model_name)
 print(model_nlp.pipe_names)
 
-=======
-root = pathlib.Path("/data/user/ozborn/OUD/oud_2_6_2/synthetic")
-#root = pathlib.Path("./test")
-print("Looking at files in " + str(root))
-
->>>>>>> Luis_err
 brat_types = ['consist', 'random', 'markov', 'simple', 'orig']
 all_tasks = {'dep_list': 'Dependency', 'token_list': 'Tokens', 'ent_list': 'Entities', 'pos_list': 'PartOfSpeech',
              'span_list': 'Spans'}
@@ -167,7 +136,6 @@ def align_tokens(doc1, doc2):
 
 
 def get_alignment(A, B):
-<<<<<<< HEAD
     """Get alignment indices using difflib.SequenceMatcher (replaces pylcs.lcs_string_idx)"""
     matcher = difflib.SequenceMatcher(None, A, B)
     matches = matcher.get_matching_blocks()
@@ -177,10 +145,6 @@ def get_alignment(A, B):
         for i in range(match.size):
             alignment_indices.append(match.a + i)
     return alignment_indices
-=======
-    res = pylcs.lcs_string_idx(A, B)
-    return res
->>>>>>> Luis_err
 
 
 def calculate_jacard(counters):
@@ -407,15 +371,8 @@ def print_global_kl_divergence(results_dictionary, distribution_name):
     for synthetic_type in brat_types:
         if synthetic_type == "orig":
             continue
-<<<<<<< HEAD
         p, q, _ = dictionary_to_normalized_distribution(results_dictionary, synthetic_type, "orig")
         print(synthetic_type + "\t" + f"{kl_divergence_smooth(p, q):.3f}")
-=======
-        synthetic_distribution = dictionary_to_normalized_distribution(results_dictionary, synthetic_type, "orig",
-                                                                       ([], []))
-        print(
-            synthetic_type + "\t" + f'{(kl_divergence_smooth(synthetic_distribution[0], synthetic_distribution[1])):.3f}')
->>>>>>> Luis_err
 
 
 def make_results_dictionary_for_distribution(distribution_results, distribution_type):
@@ -441,16 +398,11 @@ options = {
 }
 
 ####### MAIN #########
-<<<<<<< HEAD
 # files = root.rglob("*.txt")
 output_path = args.output_file
 
 # Ensure output directory exists
 Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-=======
-# files = root.rglob("*.txt")path = '/data/user/lmansill/homedata/bratSynth/BRATsynthetic/evaluation'
-output_path = '/data/user/lmansill/homedata/bratSynth/BRATsynthetic/evaluation/output1.txt'
->>>>>>> Luis_err
 
 with open(output_path, 'w') as file:
     sys.stdout = file 
@@ -473,7 +425,6 @@ with open(output_path, 'w') as file:
 
         stats = {'doc_text': data}
 
-<<<<<<< HEAD
         # Render dependency tree using the parsed model doc (requires a parser)
         html = displacy.render(model_doc, style='dep', options=options)
 
@@ -486,15 +437,6 @@ with open(output_path, 'w') as file:
             html_out.write(html)
 
         print(f"Visualization saved to {html_file}")
-=======
-        html = displacy.render(doc, style='dep', options=options)
-
-        # Save the rendered HTML to a file
-        with open("dependency_tree1.html", "w") as file:
-            file.write(html)
-
-        print("Visualization saved to dependency_tree1.html")
->>>>>>> Luis_err
 
     # print(str(fpath))
         count_data = dict.fromkeys(all_counts.keys(), 0)
@@ -521,8 +463,3 @@ with open(output_path, 'w') as file:
 '''for some_task in all_tasks.keys():
     print_counters(overall_distributions, some_task)'''
 '''print_global_kl_divergence(make_results_dictionary_for_distribution(overall_distributions, some_task), some_task)'''
-<<<<<<< HEAD
-=======
-
-
->>>>>>> Luis_err
