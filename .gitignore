@@ -158,3 +158,8 @@ temp/
 temp_output/
 evaluation/Displays/
 evaluation/*.txt
+
+# LLM generated files
+AGENTS.md
+Codex_proposed_commit.txt
+issues.txt
