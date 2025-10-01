@@ -1,0 +1,349 @@
+---
+title: "BRATsynthetic"
+author: "Biostatistician: Richard Kennedy"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  word_document:
+    fig_caption: yes
+    reference_docx: /Users/richardkennedy/Documents/Markdown/reference-docx-master/ReportTemplate.docx
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    number_sections: yes
+    citation_package: biblatex
+    latex_engine: xelatex
+  html_document:
+    fig_caption: yes
+    force_captions: yes
+    highlight: pygments
+    number_sections: yes
+    theme: cerulean
+csl: /Users/richardkennedy/Documents/Markdown/styles-master/chicago-author-date.csl
+bibliography: /Users/richardkennedy/Library/texmf/bibtex/bib/references.bib
+---
+
+```{r, echo=FALSE, message=FALSE}
+  library(knitcitations); cleanbib()
+  cite_options(citation_format = "pandoc", check.entries=FALSE)
+  library(bibtex)
+```
+
+```{r, echo=FALSE, message=FALSE, warnings=FALSE}
+ # load libraries required for analysis
+ library(knitr)
+ library(RColorBrewer)
+ library(knitcitations); cleanbib()
+ library(pander)
+ opts_chunk$set(fig.path = 'figure/', message=FALSE, warning=FALSE, dev=c('tiff','pdf'), fig.width=10, fig.height=10, dpi=300)
+```
+
+# Statistical Analysis
+We calculated the expected probability for leakage of critical information over a range of corpus sizes, ranging from 10 to 10,000 documents.  For this calculation, we considered leakage to occur if the expected number of real entities (false negatives) in the corpus was greater than a set threshold for each of the substitution methods.  For consistent substitution, the threshold was set at 0, since even a single instance of a real entity can be readily distinguished from the single fake entity.  For random and Markov substitution, the threshold was set as the expected number of fake entities (reference: K. Sigman, Expected number of visits of a finite state Markov chain to a transient state, http://www.columbia.edu/~ks20/4106-18-Fall/Notes-Transient.pdf), based on a pool of 1,000 fake entities from which to randomly select, and the transition probabilities described above.  The threshold for random substitution was equal to 1.015 and for Markov substitution was 2.028.  We allowed the number of entities per document to assume the values of 15, 150, and 1500, and allowed the false negative rate to assume the values of 1% and 5%.  We then calculated the expected number of real entities in the corpus as the product of the false negative rate times the number of entities per document times the number of documents.  We used the binomial distribution to determine the p value for whether the expected number of real entities exceeded the threshold.
+
+
+```{r, echo=FALSE}
+setwd("/Users/richardkennedy/Documents/Osborne/BRATSynthetic")
+markov.rate <- 0.5 # probability of remaining in same state in Markov model
+corpus.size <- seq(10, 10000, by=10) # size of corpus, in number of documents
+entities.per.document <- 15 # number of entities (e.g., names) to substitute per document
+num.pool <- 1000 # number of entities (e.g., names) to choose from for substitution
+fn.rate <- 0.01 # false negative rate
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (15 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob - 0.001, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob, type = "l", col = "blue", lwd = 3)
+
+legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+```
+
+```{r, echo=FALSE}
+entities.per.document <- 150
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (150 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob + 0.01, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob, type = "l", col = "blue", lwd = 3)
+
+#legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+```
+
+```{r, echo=FALSE}
+entities.per.document <- 300
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (300 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob + 0.01, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob + 0.02, type = "l", col = "blue", lwd = 3)
+
+#legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+```
+
+```{r, echo=FALSE}
+fn.rate <- 0.05 # false negative rate
+entities.per.document <- 5
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (5 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob + 0.01, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob + 0.02, type = "l", col = "blue", lwd = 3)
+
+#legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+```
+
+```{r, echo=FALSE}
+entities.per.document <- 25
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (25 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob + 0.01, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob + 0.02, type = "l", col = "blue", lwd = 3)
+
+#legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+```
+
+```{r, echo=FALSE}
+entities.per.document <- 50
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (50 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob + 0.01, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob + 0.02, type = "l", col = "blue", lwd = 3)
+
+#legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+```
+
+######
+```{r, echo=FALSE}
+setwd("/Users/richardkennedy/Documents/Osborne/BRATSynthetic")
+markov.rate <- 0.5 # probability of remaining in same state in Markov model
+corpus.size <- seq(10, 10000, by=10) # size of corpus, in number of documents
+entities.per.document <- 15 # number of entities (e.g., names) to substitute per document
+num.pool <- 1000 # number of entities (e.g., names) to choose from for substitution
+fn.rate <- 0.01 # false negative rate
+par(mfrow=c(2,3), oma = c(0, 0, 1, 0), xpd=NA)
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (15 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob - 0.01, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob, type = "l", col = "blue", lwd = 3)
+
+legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+entities.per.document <- 150
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (150 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob + 0.01, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob, type = "l", col = "blue", lwd = 3)
+
+#legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+entities.per.document <- 300
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (300 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob + 0.01, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob + 0.02, type = "l", col = "blue", lwd = 3)
+
+#legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+fn.rate <- 0.05 # false negative rate
+entities.per.document <- 5
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (5 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob + 0.01, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob + 0.02, type = "l", col = "blue", lwd = 3)
+
+#legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+entities.per.document <- 25
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (25 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob + 0.01, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob + 0.02, type = "l", col = "blue", lwd = 3)
+
+#legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+entities.per.document <- 50
+
+consistent.max <- 0
+consistent.prob <- pbinom(consistent.max, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+plot(x = corpus.size, y = consistent.prob, type = "l", col = "red", lwd = 3, log = "x", main = "Performance (50 Entities/Document)", xlab = "Corpus Size (# of Documents)", ylab = "Probability of Leakage", ylim = c(0,1))
+
+random.transition <- matrix(data=1/num.pool, nrow = entities.per.document, ncol = entities.per.document)
+random.counts <- rowSums(solve(diag(entities.per.document) - random.transition))
+random.max <- max(random.counts)
+random.prob <- pbinom(random.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = random.prob + 0.01, type = "l", col = "green", lwd = 3)
+
+markov.transition <- matrix(data = markov.rate / (num.pool - 1), nrow = entities.per.document, ncol = entities.per.document)
+diag(markov.transition) <- markov.rate
+markov.counts <- rowSums(solve(diag(entities.per.document) - markov.transition))
+markov.max <- max(markov.counts)
+markov.prob <- pbinom(markov.max * corpus.size, size = entities.per.document * corpus.size, prob = fn.rate, lower.tail = FALSE)
+lines(x = corpus.size, y = markov.prob + 0.02, type = "l", col = "blue", lwd = 3)
+
+#legend("topright", legend=c("Consistent", "Random", "Markov"), col=c("red", "green", "blue"), lty=1, title="Substitution")
+
+mtext(expression(bold("False Negative Rate = 0.01")), side = 3, line = -0.5, outer = TRUE)
+mtext(expression(bold("False Negative Rate = 0.05")), side = 3, line = -39, outer = TRUE)
+
+```
+
+
+
+
+######
+# References
+<div id="refs"></div>
+
+# Source Code
+```{r show-code, ref.label=all_labels(), echo = TRUE, eval=FALSE}
+render_markdown()
+```
+
+# Computing Environment
+```{r, echo=FALSE}
+sessionInfo()
+```
