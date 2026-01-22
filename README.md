@@ -2,9 +2,10 @@
 
 ## About
 
-Python tool that generates realistic synthetic text for a superset of I2B2 2014 personal health information entity types. 
-A poster was published in AMIA (https://knowledge.amia.org/73035-amia-1.4612663/t004-1.4613775/t004-1.4613776/3478476-1.4613879/3478476-1.4613880?qr=1) 
-and a paper is pending based on our first release [![DOI](https://zenodo.org/badge/290890218.svg)](https://zenodo.org/badge/latestdoi/290890218)
+BRATsynthetic is a python tool that generates realistic synthetic text for a superset of I2B2 2014 personal health information entity types. For the end-to-end de-identification tool that combines a BERT-based NER of PHI with surrogate substitution use our latest docker container.
+
+* End-to-End Docker Container: https://hub.docker.com/r/sirtrott/uabdeidpipeline
+* Paper: https://doi.org/10.3390/electronics14193945
 
 ## Workflow
 This tool takes annotated text from Brat (https://brat.nlplab.org) and replaces personal information with synthetic data. It will attempt to match the format of the text.
